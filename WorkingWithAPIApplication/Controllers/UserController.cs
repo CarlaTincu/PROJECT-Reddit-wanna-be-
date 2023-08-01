@@ -7,10 +7,10 @@ namespace WorkingWithAPIApplication.Controllers
 {
     [Route("api/users")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly IUserRepository userRepository;
-        public UsersController(IUserRepository userRepository)
+        public UserController(IUserRepository userRepository)
         {
             this.userRepository = userRepository;
         }

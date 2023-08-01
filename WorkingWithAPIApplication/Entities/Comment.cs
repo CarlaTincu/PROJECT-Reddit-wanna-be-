@@ -1,6 +1,6 @@
 ﻿namespace WorkingWithAPIApplication.Entities
 {
-    public class Comments
+    public class Comment
     {
         public int ID { get; set; }
         public Guid CommmentID { get; set; }

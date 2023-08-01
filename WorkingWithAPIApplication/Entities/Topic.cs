@@ -1,6 +1,6 @@
 ﻿namespace WorkingWithAPIApplication.Entities
 {
-    public class Topics
+    public class Topic
     {
         public int ID { get; set; }
         public Guid TopicID { get; set; }
