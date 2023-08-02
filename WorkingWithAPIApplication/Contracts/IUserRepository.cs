@@ -7,7 +7,7 @@ namespace WorkingWithAPIApplication.Contracts
     {
         public Task<IEnumerable<User>> GetUsers();
         public Task<User> GetUser(int id);
-        public Task<User> CreateUser(UserForCreation user);
+        public Task<int> CreateUser(UserForCreation user);
         public Task UpdateUser(int id, UserForUpdate user);
         public Task DeleteUser(int id); 
         

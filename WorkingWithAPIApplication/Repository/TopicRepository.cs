@@ -14,7 +14,7 @@ namespace WorkingWithAPIApplication.Repository
         {
             _context = context;
         }
-        public async Task<Topic> CreateTopic(TopicForCreation topic)
+        public async Task<int> CreateTopic(TopicForCreation topic)
         {
             var query = "INSERT INTO Topics(TopicID,TopicName) VALUES (@TopicID,@TopicName)";
             var parameters = new DynamicParameters();
@@ -31,7 +31,7 @@ namespace WorkingWithAPIApplication.Repository
                     TopicID = (Guid)topic.TopicID,
                     TopicName = topic.TopicName,
                 };
-                return CreateTopic;
+                return CreateTopic.ID;
             }
         }
 

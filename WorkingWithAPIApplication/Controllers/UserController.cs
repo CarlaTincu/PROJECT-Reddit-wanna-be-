@@ -32,7 +32,7 @@ namespace WorkingWithAPIApplication.Controllers
         public async Task<IActionResult> CreateUser([FromBody]UserForCreation UserC)
         {
             var createdUser = await userRepository.CreateUser(UserC);
-            return CreatedAtRoute("UserById", new { id = createdUser.ID}, createdUser);
+            return CreatedAtRoute("UserById", createdUser);
         }
 
         [HttpPut("{id}")]

@@ -8,7 +8,7 @@ namespace WorkingWithAPIApplication.Contracts
     {
         public Task<IEnumerable<Topic>> GetTopics();
         public Task<Topic> GetTopic(int id);
-        public Task<Topic> CreateTopic(TopicForCreation topic);
+        public Task<int> CreateTopic(TopicForCreation topic);
 
     }
 }

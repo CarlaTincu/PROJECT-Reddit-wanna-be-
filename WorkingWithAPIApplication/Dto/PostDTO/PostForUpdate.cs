@@ -1,12 +1,11 @@
-﻿namespace WorkingWithAPIApplication.Entities
+﻿namespace WorkingWithAPIApplication.Dto.PostDTO
 {
-    public class Post
+    public class PostForUpdate
     {
-        public int Id { get; set; }
+        public string Content { get; set; }
         public Guid PostID { get; set; }
         public int UserID { get; set; }
         public int TopicID { get; set; }
-        public string Content { get; set; }
         public DateTime PostedDate { get; set; }
     }
 }

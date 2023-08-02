@@ -35,7 +35,7 @@ namespace WorkingWithAPIApplication.Repository
             }
         }
 
-        public async Task<User> CreateUser(UserForCreation user)
+        public async Task<int> CreateUser(UserForCreation user)
         {
             var query = "INSERT INTO Users(UserId,Username,Email,Password) VALUES (@UserId,@Username,@Email,@Password)";
             var parameters = new DynamicParameters();
@@ -56,8 +56,7 @@ namespace WorkingWithAPIApplication.Repository
                     Email = user.Email,
                     Password = user.Password,
                 };
-                return CreatedUser;
-
+                return CreatedUser.ID;
             }
         }
 

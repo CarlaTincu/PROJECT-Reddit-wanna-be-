@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<DapperContext>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITopicRepository, TopicRepository>();
+builder.Services.AddScoped<IPostRepository, PostRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
 builder.Services.AddControllers();
 
 
@@ -22,3 +25,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+DateTime x = DateTime.Now;
+Console.WriteLine(x);
