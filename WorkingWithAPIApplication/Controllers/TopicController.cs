@@ -32,10 +32,10 @@ namespace WorkingWithAPIApplication.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTopic([FromBody] TopicForCreation TopicC)
+        public async Task<IActionResult> CreateTopic([FromBody] TopicForCreation TopicID)
         {
-            var createdTopic = await topicRepository.CreateTopic(TopicC);
-            return CreatedAtRoute("TopicById",  createdTopic);
+            var createdTopic = await topicRepository.CreateTopic(TopicID);
+            return Ok(new { Id = createdTopic });
         }
     }
 }

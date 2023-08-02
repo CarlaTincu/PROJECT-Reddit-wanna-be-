@@ -29,10 +29,10 @@ namespace WorkingWithAPIApplication.Controllers
             return Ok(user);
         }
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody]UserForCreation UserC)
+        public async Task<IActionResult> CreateUser([FromBody]UserForCreation UserID)
         {
-            var createdUser = await userRepository.CreateUser(UserC);
-            return CreatedAtRoute("UserById", createdUser);
+            var createdUser = await userRepository.CreateUser(UserID);
+            return Ok(new { Id = createdUser });
         }
 
         [HttpPut("{id}")]
