@@ -60,7 +60,7 @@ namespace WorkingWithAPIApplication.Repository
         {
             using (var connection = _context.CreateConnection())
             {
-                var query = "SELECT * FROM Comments WHERE ID = @ID";
+                var query = "SELECT Comments.*, Users.Username \r\nFROM Comments \r\nINNER JOIN Users ON Users.ID = Comments.UserID\r\nWHERE Comments.ID  = @ID\r\n;\r\n\r\n";
                 var comment = await connection.QueryFirstOrDefaultAsync<Comment>(query, new { ID = id });
 
                 return comment;

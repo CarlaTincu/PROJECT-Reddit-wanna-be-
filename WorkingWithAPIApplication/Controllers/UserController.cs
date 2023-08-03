@@ -54,5 +54,14 @@ namespace WorkingWithAPIApplication.Controllers
             await userRepository.DeleteUser(id);
             return NoContent();
         }
+        [HttpGet("/user/{Username}")]
+        public async Task<IActionResult> GetUserForLogin(string Username, string Password)
+        {
+            var user = await userRepository.GetUserForLogin(Username,Password);
+            if (user == null)
+                return NotFound();
+            return Ok(user);
+        }
+
     }
 }

@@ -1,29 +1,34 @@
+using Microsoft.AspNetCore.StaticFiles;
 using WorkingWithAPIApplication.Context;
 using WorkingWithAPIApplication.Contracts;
 using WorkingWithAPIApplication.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddControllers(options =>
+{
+    options.ReturnHttpNotAcceptable = true;
+}).AddXmlDataContractSerializerFormatters();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<DapperContext>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITopicRepository, TopicRepository>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 
-builder.Services.AddControllers();
-
-
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
+app.UseRouting(); 
+app.UseAuthorization(); 
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+}); 
 app.Run();
-DateTime x = DateTime.Now;
-Console.WriteLine(x);

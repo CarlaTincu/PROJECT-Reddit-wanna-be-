@@ -34,7 +34,7 @@ namespace WorkingWithAPIApplication.Repository
         {
             using (var connection = _context.CreateConnection())
             {
-                var query = "SELECT * FROM Posts WHERE ID = @ID";
+                var query = "SELECT Posts.*, Users.Username \r\nFROM Posts \r\nINNER JOIN Users ON Users.ID = Posts.UserID\r\nWHERE Posts.ID  = @ID;\r\n";
                 var post = await connection.QueryFirstOrDefaultAsync<Post>(query, new { ID = postId });
 
                 return post;
@@ -89,17 +89,7 @@ namespace WorkingWithAPIApplication.Repository
             using (var connection = _context.CreateConnection())
             {
                 var id = await connection.QuerySingleOrDefaultAsync<int>(query, parameters);
-                var CreatedPost = new Post
-                {
-                    Id = id,
-                    PostID = (Guid)post.PostId,
-                    UserID = post.UserId,
-                    PostedDate = DateTime.Now,
-                    TopicID = post.TopicId,
-                    Content = post.Content,
-
-                };
-                return CreatedPost.Id;
+                return id;
             }
         }
 

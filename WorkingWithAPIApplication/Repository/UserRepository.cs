@@ -1,5 +1,6 @@
 ﻿using Azure.Identity;
 using Dapper;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
 using WorkingWithAPIApplication.Context;
 using WorkingWithAPIApplication.Contracts;
@@ -80,6 +81,16 @@ namespace WorkingWithAPIApplication.Repository
             using (var connection = _context.CreateConnection())
             {
                  await connection.ExecuteAsync(query, new { id });
+            }
+        }
+
+        public async Task<User> GetUserForLogin(string Username, string Password)
+        {
+            var query = "SELECT Username, Password FROM Users WHERE Username = @Username AND Password = @Password;";
+            using (var connection = _context.CreateConnection())
+            {
+                var user = await connection.QuerySingleOrDefaultAsync<User>(query, new { Username = Username, Password = Password });
+                return user;
             }
         }
     }
