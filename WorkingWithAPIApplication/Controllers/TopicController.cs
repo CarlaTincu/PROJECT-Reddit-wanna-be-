@@ -30,8 +30,9 @@ namespace WorkingWithAPIApplication.Controllers
                 return NotFound();
             return Ok(topic);
         }
+        
 
-        [HttpPost]
+        [HttpPost("Create")]
         public async Task<IActionResult> CreateTopic([FromBody] TopicForCreation TopicID)
         {
             var createdTopic = await topicRepository.CreateTopic(TopicID);

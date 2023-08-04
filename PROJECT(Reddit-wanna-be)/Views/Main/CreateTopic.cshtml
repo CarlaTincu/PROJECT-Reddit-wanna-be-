@@ -1,0 +1,8 @@
+﻿@using PROJECT_Reddit_wanna_be_.Project.Data.Entities;
+@model Topics;
+
+<form asp-controller="Main" asp-action="CreateTopic">
+    <input type="TopicName" name="TopicName" placeholder="TopicName" required />
+    <button type="submit">OK</button>
+    
+</form>

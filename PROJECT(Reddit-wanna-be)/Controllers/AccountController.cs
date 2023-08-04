@@ -14,10 +14,12 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         {
             return View();
         }
+
         public IActionResult Login()
         {
             return View();
         }
+
         [HttpPost]
         public async Task<IActionResult> Login(string UserName, string Password)
         {
@@ -42,14 +44,14 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
             return View(null);
         }
-        //https://localhost:7030
+       
 
 
         public IActionResult Register()
         {
-            var model = new RegisterModel();
-            return View(model);
+            return View();
         }
+
         [HttpPost]
         public async Task<IActionResult> Register(RegisterModel model)
         {
