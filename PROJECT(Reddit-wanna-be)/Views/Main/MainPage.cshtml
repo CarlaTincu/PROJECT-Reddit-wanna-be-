@@ -1,0 +1,20 @@
+﻿@using PROJECT_Reddit_wanna_be_.Project.Data.Entities;
+
+@{
+    ViewBag.Title = "REDDIT WANNA BE";
+    Layout = "_LayoutMainPage";
+}
+
+
+@model MainPageModel
+<h1>Topics</h1>
+<p>
+    <a asp-action="Create">Create new Topic</a>
+</p>
+
+
+@foreach (var topic in Model.TopicsList)
+{
+    <div><a href>@topic.TopicName</div>
+    <!-- Other topic properties -->
+}

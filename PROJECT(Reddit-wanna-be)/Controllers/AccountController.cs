@@ -31,7 +31,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                     {
                         string responseBody = await response.Content.ReadAsStringAsync();
                         var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.User>(responseBody);
-                        return RedirectToAction("Index", "Home");
+                        return RedirectToAction("MainPage", "Main");
                     }
                     else
                     {

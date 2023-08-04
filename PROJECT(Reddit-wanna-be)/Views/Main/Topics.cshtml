@@ -1,0 +1,30 @@
+﻿@using PROJECT_Reddit_wanna_be_.Project.Data.Entities;
+
+
+
+@{
+    Layout = "_LayoutTopics";
+}
+
+@model List<Topics>
+<h1>Topics</h1>
+<p>
+    <a asp-action="Create">Create new Topic</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+        
+            <th>Content</th>
+            
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var post in Model)
+        {
+            <tr>
+                <td>@post.TopicName</td>
+            </tr>
+        }
+    </tbody>
+</table>
