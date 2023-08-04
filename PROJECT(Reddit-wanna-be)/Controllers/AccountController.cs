@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using PROJECT_Reddit_wanna_be_.Models;
+using System.Text;
 using System.Text.Json.Serialization;
 
 
@@ -8,7 +9,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 {
     public class AccountController : Controller
     {
-        
+
         public IActionResult Index()
         {
             return View();
@@ -17,9 +18,8 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         {
             return View();
         }
-
-       // [HttpPost]
-        public async Task<IActionResult> abc(string UserName,string Password)
+        [HttpPost]
+        public async Task<IActionResult> Login(string UserName, string Password)
         {
             if (true)
             {
@@ -31,7 +31,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                     {
                         string responseBody = await response.Content.ReadAsStringAsync();
                         var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.User>(responseBody);
-                        return RedirectToAction("Index","Home");
+                        return RedirectToAction("Index", "Home");
                     }
                     else
                     {
@@ -42,26 +42,37 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
             return View(null);
         }
+        //https://localhost:7030
 
-        public IActionResult Register() 
+
+        public IActionResult Register()
         {
             var model = new RegisterModel();
             return View(model);
         }
-
-
         [HttpPost]
-        public IActionResult Register(RegisterModel model)
+        public async Task<IActionResult> Register(RegisterModel model)
         {
-            if (ModelState.IsValid)
+            if (true)
             {
-                // Add registration logic here
-                // For now, let's assume registration is successful
-                // You might want to save the user to a database
-                return RedirectToAction("Login");
-            }
+                using (HttpClient client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7030/");
+                    HttpResponseMessage response = await client.PostAsync("api/users/create", new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json"));
 
-            return View(model);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.User>(responseBody);
+                        return RedirectToAction("Login");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                    }
+                }
+            }
+            return View(null);
         }
         public IActionResult Dashboard()
         {

@@ -2,6 +2,7 @@
 using Dapper;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.AspNetCore.Mvc;
 using WorkingWithAPIApplication.Context;
 using WorkingWithAPIApplication.Contracts;
 using WorkingWithAPIApplication.Dto.UserDTO;
@@ -35,7 +36,7 @@ namespace WorkingWithAPIApplication.Repository
                 return user;
             }
         }
-
+        [HttpPost]
         public async Task<int> CreateUser(UserForCreation user)
         {
             var query = "INSERT INTO Users(UserId,Username,Email,Password) VALUES (@UserId,@Username,@Email,@Password)";
@@ -49,15 +50,7 @@ namespace WorkingWithAPIApplication.Repository
             using (var connection = _context.CreateConnection())
             {
                 var id = await connection.QuerySingleOrDefaultAsync<int>(query, parameters);
-                var CreatedUser = new User
-                {
-                    ID = id,
-                    UserID = (Guid)user.UserId,
-                    Username = user.Username,
-                    Email = user.Email,
-                    Password = user.Password,
-                };
-                return CreatedUser.ID;
+                return id;
             }
         }
 
@@ -93,5 +86,6 @@ namespace WorkingWithAPIApplication.Repository
                 return user;
             }
         }
+
     }
 }

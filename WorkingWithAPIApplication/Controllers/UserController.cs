@@ -28,7 +28,7 @@ namespace WorkingWithAPIApplication.Controllers
                 return NotFound();
             return Ok(user);
         }
-        [HttpPost]
+        [HttpPost("create")]
         public async Task<IActionResult> CreateUser([FromBody]UserForCreation UserID)
         {
             var createdUser = await userRepository.CreateUser(UserID);

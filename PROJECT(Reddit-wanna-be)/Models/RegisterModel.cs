@@ -5,7 +5,7 @@ namespace PROJECT_Reddit_wanna_be_.Models
     public class RegisterModel
     {
         [Required]
-        public string Username { get; set; }
+        public string UserName { get; set; }
 
         [Required]
         [DataType(DataType.Password)]
