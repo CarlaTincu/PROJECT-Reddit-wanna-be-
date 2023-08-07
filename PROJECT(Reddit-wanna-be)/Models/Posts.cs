@@ -4,10 +4,11 @@
     {
         public int Id { get; set; }
         public Guid PostID { get; set; }
-        public string UserID {get;set; }
-        public string TopicID { get; set; }
+        public int UserID {get;set; }
+        public int TopicID { get; set; }
         public string Content { get; set; }
         public DateTime PostedDate { get; set; }    
         public string Username { get; set; }
+        public List<Comments> Comments { get; set; }
     }
 }

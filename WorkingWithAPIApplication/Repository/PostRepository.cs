@@ -29,6 +29,16 @@ namespace WorkingWithAPIApplication.Repository
                 return posts.ToList();
             }
         }
+        public async Task<IEnumerable<Post>> GetPostsByTopicId(int TopicID)
+        {
+            var query = "SELECT P.*, U.Username\r\nFROM Posts P\r\nINNER JOIN Users U ON P.UserID = U.ID\r\nWHERE P.TopicID = @TopicID;";
+            //var query = "SELECT * FROM Posts WHERE Posts.TopicID = @TopicID";
+            using (var connection = _context.CreateConnection())
+            {
+                var posts = await connection.QueryAsync<Post>(query, new { TopicID }); 
+                return posts.ToList();
+            }
+        }
 
         public async Task<Post> GetPost(int postId)
         {

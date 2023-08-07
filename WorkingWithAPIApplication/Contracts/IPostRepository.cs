@@ -11,5 +11,6 @@ namespace WorkingWithAPIApplication.Contracts
         public Task<int> CreatePost(PostForCreation post);
         public Task UpdatePost(int id, PostForUpdate post);
         public Task DeletePost(int id);
+        public Task<IEnumerable<Post>> GetPostsByTopicId(int TopicID);
     }
 }

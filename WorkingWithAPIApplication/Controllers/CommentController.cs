@@ -16,11 +16,11 @@ namespace WorkingWithAPIApplication.Controllers
         {
             this.commentRepository = commentRepository;
         }
-        [HttpPost]
+        [HttpPost("Create")]
         public async Task<IActionResult> CreateComment([FromBody] CommentForCreation CommentID)
         {
             var createComment = await commentRepository.CreateComment(CommentID);
-            return Ok(new { Id = CommentID });
+            return Ok(new { ID = CommentID });
         }
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateComment(int id, [FromBody] CommentForUpdate commentUpdated)
@@ -41,10 +41,10 @@ namespace WorkingWithAPIApplication.Controllers
             await commentRepository.DeleteComment(id);
             return NoContent();
         }
-        [HttpGet]
-        public async Task<IActionResult> GetComments()
+        [HttpGet("PostID/{postId}")]
+        public async Task<IActionResult> GetComments(int PostId)
         {
-            var comments = await commentRepository.GetComments();
+            var comments = await commentRepository.GetComments(PostId);
             return Ok(comments);
         }
         [HttpGet("{Id}", Name = "CommentById")]

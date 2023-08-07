@@ -30,11 +30,20 @@ namespace WorkingWithAPIApplication.Controllers
                 return NotFound();
             return Ok(post);
         }
-        [HttpPost]
+        [HttpPost("Create")]
         public async Task<IActionResult> CreatePost([FromBody] PostForCreation PostID)
         {
-            var createPost = await postRepository.CreatePost(PostID);
-            return Ok(new { Id = createPost});
+            try
+            {
+                var createPost = await postRepository.CreatePost(PostID);
+                return Ok(new { Id = createPost });
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            
         }
 
         [HttpPut("{id}")]
@@ -55,6 +64,14 @@ namespace WorkingWithAPIApplication.Controllers
                 return NotFound();
             await postRepository.DeletePost(id);
             return NoContent();
+        }
+
+
+        [HttpGet("PostsByTopic/{TopicID}")] // Use the correct parameter name
+        public async Task<IActionResult> GetPostsByTopicId(int TopicID)
+        {
+            var posts = await postRepository.GetPostsByTopicId(TopicID);
+            return Ok(posts);
         }
 
     }

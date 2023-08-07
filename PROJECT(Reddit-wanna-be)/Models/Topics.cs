@@ -8,6 +8,7 @@ namespace PROJECT_Reddit_wanna_be_.Project.Data.Entities
     {
         public int ID { get; set; }
         public Guid TopicID { get; set; }
+
         [Required]
         public string TopicName { get; set; }
     }

@@ -76,10 +76,6 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             }
             return View(null);
         }
-        public IActionResult Dashboard()
-        {
-            return View();
-        }
 
     }
 }

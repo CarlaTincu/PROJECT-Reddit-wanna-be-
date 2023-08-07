@@ -32,18 +32,9 @@ namespace WorkingWithAPIApplication.Repository
 
             using (var connection = _context.CreateConnection())
             {
-                var id = await connection.QuerySingleOrDefaultAsync<int>(query, parameters);
-                var CreatedComment = new Comment
-                {
-                    ID = id,
-                    CommmentID = comment.CommmentID,
-                    UserID = comment.UserID,
-                    Content = comment.Content,
-                    PostID = comment.PostID,
-                    PostedDate = comment.PostedDate
+                return await connection.QuerySingleOrDefaultAsync<int>(query, parameters);
 
-                };
-                return CreatedComment.ID;
+                
             }
         }
 
@@ -67,12 +58,16 @@ namespace WorkingWithAPIApplication.Repository
             }
         }
 
-        public async Task<IEnumerable<Comment>> GetComments()
+        public async Task<IEnumerable<Comment>> GetComments(int postId)
         {
-            var query = "SELECT * FROM Comments";
+            var query = "SELECT Comments.*, Users.Username " +
+                "FROM Comments " +
+                "INNER JOIN Users ON Users.ID = Comments.UserID " +
+                "WHERE Comments.PostID = @PostID";
+
             using (var connection = _context.CreateConnection())
             {
-                var comments = await connection.QueryAsync<Comment>(query);
+                var comments = await connection.QueryAsync<Comment>(query, new { PostID = postId });
                 return comments.ToList();
             }
         }

@@ -1,21 +1,59 @@
-﻿
-
-@{
+﻿@{
     ViewBag.Title = "REDDIT WANNA BE";
     Layout = "_LayoutMainPage";
 }
 
-
 @model MainPageModel
 <h1>Topics</h1>
-<div>
-        <p>
-            <a asp-controller="Main" asp-action="CreateTopic">CREATE TOPIC</a>
-        </p>
-    </div>
 
-@foreach (var topic in Model.TopicsList)
-{
-    <div><a href>@topic.TopicName</div>
-    <!-- Other topic properties -->
-}
+<form asp-controller="Main" asp-action="CreateTopic">
+    <input type="TopicName" name="topic.TopicName" placeholder="TopicName" required />
+    <button type="submit" class="btn btn-primary">CREATE TOPIC</button>
+</form>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 50%;
+            margin: auto;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: center;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #fff2281;
+        }
+
+        a {
+            text-decoration: none;
+            color: #333;
+            font-size: 25px; 
+            display: block; 
+            padding: 5px; 
+        }
+
+            a:hover {
+                color: #007bff;
+            }
+    </style>
+</head>
+<body>
+    <table>
+        @foreach (var topic in Model.TopicsList)
+        {
+            <tr>
+                <td>
+                    <a href="@Url.Action("PostByTopic", "Main", new { topicId = topic.ID })">@topic.TopicName</a>
+                </td>
+            </tr>
+        }
+    </table>
+</body>
+</html>
