@@ -36,6 +36,17 @@ namespace WorkingWithAPIApplication.Repository
                 return user;
             }
         }
+
+        public  User GetUser(string userName)
+        {
+            var query = "SELECT * FROM Users WHERE Username = @Username;";
+            using (var connection = _context.CreateConnection())
+            {
+                var user = connection.QuerySingleOrDefault<User>(query, new { userName});
+                return user;
+            }
+        }
+
         [HttpPost]
         public async Task<int> CreateUser(UserForCreation user)
         {

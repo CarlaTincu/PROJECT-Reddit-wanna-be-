@@ -11,6 +11,8 @@ namespace WorkingWithAPIApplication.Contracts
         public Task UpdateUser(int id, UserForUpdate user);
         public Task DeleteUser(int id); 
         public Task<User> GetUserForLogin(string Username, string Password);
-        
+        public User GetUser(string userName);
+
+
     }
 }

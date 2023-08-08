@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using DocumentFormat.OpenXml.InkML;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkingWithAPIApplication.Context;
 using WorkingWithAPIApplication.Contracts;
@@ -17,6 +18,7 @@ namespace WorkingWithAPIApplication.Repository
         }
 
         [HttpPost("Create")]
+        
         public async Task<int> CreateTopic(TopicForCreation topic)
         {
             var query = "INSERT INTO Topics(TopicID,TopicName) VALUES (@TopicID,@TopicName)";

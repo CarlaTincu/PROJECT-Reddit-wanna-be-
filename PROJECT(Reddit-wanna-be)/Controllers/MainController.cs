@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PROJECT_Reddit_wanna_be_.Models;
 using PROJECT_Reddit_wanna_be_.Project.Data.Entities;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 
@@ -42,29 +45,56 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         }
 
         [HttpPost]
+      
         public async Task<IActionResult> CreateTopic(Topics topic)
         {
-            if (true)
+            using (HttpClient client = new HttpClient())
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri("https://localhost:7030/");
-                    HttpResponseMessage response = await client.PostAsync("api/topics/Create", new StringContent(JsonConvert.SerializeObject(topic), Encoding.UTF8, "application/json"));
+                client.BaseAddress = new Uri("https://localhost:7030/");
 
-                    if (response.IsSuccessStatusCode)
+                // Send the topic creation request
+                HttpResponseMessage response = await client.PostAsync("api/topics/Create", new StringContent(JsonConvert.SerializeObject(topic), Encoding.UTF8, "application/json"));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync();
+
+                    // Assuming the response contains a token, although this is not typical
+                    var token = responseBody.Trim(); // Extracting the token
+
+                    if (!string.IsNullOrEmpty(token))
                     {
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(responseBody);
-                        return RedirectToAction("MainPage");
+                        // Setting the token as the Authorization header
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                        // Make another request using the authorized client
+                        HttpResponseMessage authorizedResponse = await client.PostAsync("api/topics/Create", new StringContent(JsonConvert.SerializeObject(topic), Encoding.UTF8, "application/json"));
+
+                        if (authorizedResponse.IsSuccessStatusCode)
+                        {
+                            string authorizedResponseBody = await authorizedResponse.Content.ReadAsStringAsync();
+                            var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(authorizedResponseBody);
+                            return RedirectToAction("MainPage");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Authorized request failed with status code: {authorizedResponse.StatusCode}");
+                        }
                     }
                     else
                     {
-                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                        Console.WriteLine("Token not available in response.");
                     }
                 }
+                else
+                {
+                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                }
             }
+
             return View(null);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Topics() 

@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata.Ecma335;
+using System.Security.Claims;
 using WorkingWithAPIApplication.Contracts;
 using WorkingWithAPIApplication.Dto.UserDTO;
+using WorkingWithAPIApplication.Entities;
 
 namespace WorkingWithAPIApplication.Controllers
 {
@@ -62,6 +66,32 @@ namespace WorkingWithAPIApplication.Controllers
                 return NotFound();
             return Ok(user);
         }
+
+        private User GetCurrentUser()
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            if (identity != null)
+            {
+                var userClaims = identity.Claims;
+                return new User()
+                {
+                    Username = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.NameIdentifier)?.Value,
+                    Email = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Email)?.Value,
+                };
+            }
+            return null;
+        }
+        [HttpGet("Admins")]
+        [Authorize]
+        public IActionResult AdminsEndpoint()
+        {
+            var currentUser = GetCurrentUser();
+            return Ok($"Hi {currentUser.Username}!");
+
+        }
+
+
+        
 
     }
 }

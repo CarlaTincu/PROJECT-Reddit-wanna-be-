@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WorkingWithAPIApplication.Contracts;
 using WorkingWithAPIApplication.Dto.TopicDTO;
@@ -30,9 +31,10 @@ namespace WorkingWithAPIApplication.Controllers
                 return NotFound();
             return Ok(topic);
         }
-        
 
+       
         [HttpPost("Create")]
+        [Authorize]
         public async Task<IActionResult> CreateTopic([FromBody] TopicForCreation TopicID)
         {
             var createdTopic = await topicRepository.CreateTopic(TopicID);
