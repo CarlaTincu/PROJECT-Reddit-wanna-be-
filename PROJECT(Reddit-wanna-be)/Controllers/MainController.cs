@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -44,57 +45,105 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             }
         }
 
+        //[HttpPost]
+        //public async Task<IActionResult> CreateTopic(Topics topic)
+        //{
+        //    if (true)
+        //    {
+        //        using (HttpClient client = new HttpClient())
+        //        {
+        //            client.BaseAddress = new Uri("https://localhost:7030/");
+
+        //            string token = Request.Cookies["jwt"];
+        //            var options = new CookieOptions
+        //            {
+        //                HttpOnly = true,
+        //                Secure = true,
+        //                SameSite = SameSiteMode.Strict
+        //            };
+        //            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        //            Response.Cookies.Append("jwt", token, options);
+        //            HttpResponseMessage response = await client.PostAsync("api/topics/Create", new StringContent(JsonConvert.SerializeObject(topic), Encoding.UTF8, "application/json"));
+        //            if (response.IsSuccessStatusCode)
+        //            {
+        //                string responseBody = await response.Content.ReadAsStringAsync();
+        //                var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(responseBody);
+        //                return RedirectToAction("MainPage");
+        //            }
+        //            else
+        //            {
+        //                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+        //            }
+        //        }
+        //    }
+        //    return View(null);
+        //}
+
         [HttpPost]
-      
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreateTopic(Topics topic)
         {
-            using (HttpClient client = new HttpClient())
+            try
             {
-                client.BaseAddress = new Uri("https://localhost:7030/");
-
-                // Send the topic creation request
-                HttpResponseMessage response = await client.PostAsync("api/topics/Create", new StringContent(JsonConvert.SerializeObject(topic), Encoding.UTF8, "application/json"));
-
-                if (response.IsSuccessStatusCode)
+                using (HttpClient client = new HttpClient())
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync();
+                    client.BaseAddress = new Uri("https://localhost:7030/");
+                    string authToken = Request.Cookies["jwt"];
 
-                    // Assuming the response contains a token, although this is not typical
-                    var token = responseBody.Trim(); // Extracting the token
-
-                    if (!string.IsNullOrEmpty(token))
+                    if (!string.IsNullOrEmpty(authToken))
                     {
-                        // Setting the token as the Authorization header
-                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-                        // Make another request using the authorized client
-                        HttpResponseMessage authorizedResponse = await client.PostAsync("api/topics/Create", new StringContent(JsonConvert.SerializeObject(topic), Encoding.UTF8, "application/json"));
-
-                        if (authorizedResponse.IsSuccessStatusCode)
+                        try
                         {
-                            string authorizedResponseBody = await authorizedResponse.Content.ReadAsStringAsync();
-                            var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(authorizedResponseBody);
-                            return RedirectToAction("MainPage");
+                            JObject authTokenObject = JObject.Parse(authToken);
+                            string jwtToken = authTokenObject["token"]?.ToString();
+
+                            if (!string.IsNullOrEmpty(jwtToken))
+                            {
+                                // Use jwtToken as needed, for example:
+                                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+
+                                string json = JsonConvert.SerializeObject(topic);
+                                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                                HttpResponseMessage response = await client.PostAsync("api/topics/Create", content);
+
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    string responseBody = await response.Content.ReadAsStringAsync();
+                                    var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(responseBody);
+                                    return RedirectToAction("MainPage");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("JWT token value not found in the cookie.");
+                            }
                         }
-                        else
+                        catch (JsonReaderException)
                         {
-                            Console.WriteLine($"Authorized request failed with status code: {authorizedResponse.StatusCode}");
+                            Console.WriteLine("Invalid JSON format in the cookie.");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Token not available in response.");
+                        Console.WriteLine("No JWT token cookie found.");
                     }
+                 
                 }
-                else
-                {
-                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+               
             }
 
             return View(null);
         }
-
 
         [HttpPost]
         public async Task<IActionResult> Topics() 

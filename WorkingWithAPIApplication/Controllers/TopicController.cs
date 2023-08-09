@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WorkingWithAPIApplication.Contracts;
@@ -34,7 +35,7 @@ namespace WorkingWithAPIApplication.Controllers
 
        
         [HttpPost("Create")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreateTopic([FromBody] TopicForCreation TopicID)
         {
             var createdTopic = await topicRepository.CreateTopic(TopicID);

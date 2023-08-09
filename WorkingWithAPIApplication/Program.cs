@@ -23,6 +23,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
@@ -73,7 +74,7 @@ app.Use(async (context, next) =>
     var token = context.Request.Cookies["jwt"];
     if (!string.IsNullOrEmpty(token))
     {
-        context.Request.Headers.Add("Authorization", "Bearer " + token);
+        context.Request.Headers.Add("Authorization", "Bearer " + token); 
     }
     await next();
 });

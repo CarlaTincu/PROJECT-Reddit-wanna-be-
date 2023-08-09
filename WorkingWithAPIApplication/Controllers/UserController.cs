@@ -89,9 +89,5 @@ namespace WorkingWithAPIApplication.Controllers
             return Ok($"Hi {currentUser.Username}!");
 
         }
-
-
-        
-
     }
 }

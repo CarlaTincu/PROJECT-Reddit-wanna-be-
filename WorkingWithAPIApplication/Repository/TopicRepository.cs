@@ -17,8 +17,6 @@ namespace WorkingWithAPIApplication.Repository
             _context = context;
         }
 
-        [HttpPost("Create")]
-        
         public async Task<int> CreateTopic(TopicForCreation topic)
         {
             var query = "INSERT INTO Topics(TopicID,TopicName) VALUES (@TopicID,@TopicName)";
