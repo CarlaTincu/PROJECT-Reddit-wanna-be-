@@ -45,42 +45,8 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             }
         }
 
-        //[HttpPost]
-        //public async Task<IActionResult> CreateTopic(Topics topic)
-        //{
-        //    if (true)
-        //    {
-        //        using (HttpClient client = new HttpClient())
-        //        {
-        //            client.BaseAddress = new Uri("https://localhost:7030/");
-
-        //            string token = Request.Cookies["jwt"];
-        //            var options = new CookieOptions
-        //            {
-        //                HttpOnly = true,
-        //                Secure = true,
-        //                SameSite = SameSiteMode.Strict
-        //            };
-        //            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        //            Response.Cookies.Append("jwt", token, options);
-        //            HttpResponseMessage response = await client.PostAsync("api/topics/Create", new StringContent(JsonConvert.SerializeObject(topic), Encoding.UTF8, "application/json"));
-        //            if (response.IsSuccessStatusCode)
-        //            {
-        //                string responseBody = await response.Content.ReadAsStringAsync();
-        //                var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(responseBody);
-        //                return RedirectToAction("MainPage");
-        //            }
-        //            else
-        //            {
-        //                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-        //            }
-        //        }
-        //    }
-        //    return View(null);
-        //}
 
         [HttpPost]
-        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreateTopic(Topics topic)
         {
             try
@@ -99,7 +65,6 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
                             if (!string.IsNullOrEmpty(jwtToken))
                             {
-                                // Use jwtToken as needed, for example:
                                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
                                 string json = JsonConvert.SerializeObject(topic);
