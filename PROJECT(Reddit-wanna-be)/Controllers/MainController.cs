@@ -14,6 +14,7 @@ using System.Text;
 
 namespace PROJECT_Reddit_wanna_be_.Controllers
 {
+
     public class MainController : Controller
     {
         
@@ -128,19 +129,20 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                 if (response.IsSuccessStatusCode)
                 {
                     string responseBody = await response.Content.ReadAsStringAsync();
-                    var posts = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Posts>>(responseBody);
-                    return View("PostByTopic", posts); 
+                    var posts = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(responseBody);
+                    return View("PostByTopic",posts); 
                 }
                 else
                 {
                     Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                 }
             }
-            return View(new List<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Posts>());
+            return View(new List<PROJECT_Reddit_wanna_be_.Models.Posts>());
         }
         [HttpPost]
         public async Task<IActionResult> PostByTopic()
         {
+
             return View();
         }
         [HttpPost]
@@ -152,18 +154,61 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    HttpResponseMessage response = await client.PostAsync("api/posts/Create", new StringContent(JsonConvert.SerializeObject(post), Encoding.UTF8, "application/json"));
+                    string authToken = Request.Cookies["jwt"];
 
-                    if (response.IsSuccessStatusCode)
+                    if (!string.IsNullOrEmpty(authToken))
                     {
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(responseBody);
-                        return RedirectToAction("PostByTopic", new { topicId = topicId , userId = userId});
+                        try
+                        {
+                            JObject authTokenObject = JObject.Parse(authToken);
+                            string jwtToken = authTokenObject["token"]?.ToString();
+
+                            if (!string.IsNullOrEmpty(jwtToken))
+                            {
+                                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+
+                                string json = JsonConvert.SerializeObject(post);
+                                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                                HttpResponseMessage response = await client.PostAsync("api/posts/Create", content);
+
+                                if (response.IsSuccessStatusCode)
+                                {
+
+                                    string responseBody = await response.Content.ReadAsStringAsync();
+                                    var createdPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(responseBody);
+                                    int postId = createdPost.Id;
+
+                                    HttpResponseMessage getPostResponse = await client.GetAsync($"api/posts/{postId}");
+
+                                    if (getPostResponse.IsSuccessStatusCode)
+                                    {
+                                        string getPostResponseBody = await getPostResponse.Content.ReadAsStringAsync();
+                                        var retrievedPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(getPostResponseBody);
+
+                                        return RedirectToAction("PostByTopic", "Main", new {topicId = topicId});
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("JWT token value not found in the cookie.");
+                                }
+                            }
+                        }
+                        catch (JsonReaderException)
+                        {
+                            Console.WriteLine("Invalid JSON format in the cookie.");
+                        }
                     }
                     else
                     {
-                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                        Console.WriteLine("No JWT token cookie found.");
                     }
+
                 }
             }
             return View(null);

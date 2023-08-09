@@ -1,6 +1,66 @@
-﻿<form asp-controller="Main" asp-action="CreatePost" asp-route-topicId="@ViewBag.TopicId">
+﻿@using System.Security.Claims;
+@model List<PROJECT_Reddit_wanna_be_.Models.Posts>
+
+@{
+    Layout = "_LayoutPosts";
+}
+
+<h1>Posts for Selected Topic</h1>
+
+<form asp-controller="Main" asp-action="CreatePost" asp-route-topicId="@ViewBag.TopicId">
     <input type="Content" name="Content" placeholder="Content" required />
     <input type="UserID" name="UserID" placeholder="UserID" required />
     <input type="TopicID" name="TopicID" placeholder="TopicID" required />
     <button type="submit" class="btn btn-primary">Post</button>
 </form>
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #e0e0e0;
+        }
+
+        .content {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<table>
+    <tr>
+    </tr>
+    @foreach (var post in Model ?? Enumerable.Empty<PROJECT_Reddit_wanna_be_.Models.Posts>())
+    {
+        <tr>
+            <td>@post.Content</td>
+            <td>@post.PostedDate</td>
+            <td>
+                <a class="show-comments" href="@Url.Action("GetComments", "Main", new { postId = post.Id })">Comments</a>
+            </td>
+        </tr>
+    }
+</table>

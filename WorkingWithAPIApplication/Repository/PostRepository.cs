@@ -77,8 +77,8 @@ namespace WorkingWithAPIApplication.Repository
 
         public async Task<int> CreatePost(PostForCreation post)
         {
-            var query = @"INSERT INTO Posts(PostID, Content, PostedDate, UserID, TopicID)
-                 VALUES (@PostID, @Content, @PostedDate, @UserID, @TopicID)";
+            var query = @"INSERT INTO Posts(PostID, Content, PostedDate, UserID, TopicID) 
+                 VALUES (@PostID, @Content, @PostedDate, @UserID, @TopicID) SELECT CAST(SCOPE_IDENTITY() as int)";
 
             bool validUser = await ValidateUserExists(post.UserId.ToString());
             bool validTopic = await ValidateTopicExists(post.TopicId.ToString());

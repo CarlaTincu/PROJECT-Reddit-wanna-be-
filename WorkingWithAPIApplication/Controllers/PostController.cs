@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WorkingWithAPIApplication.Contracts;
 using WorkingWithAPIApplication.Dto.PostDTO;
 using WorkingWithAPIApplication.Dto.UserDTO;
@@ -17,11 +19,13 @@ namespace WorkingWithAPIApplication.Controllers
             this.postRepository = postRepository;
         }
         [HttpGet]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> GetPosts()
         {
             var posts = await postRepository.GetPosts();
             return Ok(posts);
         }
+
         [HttpGet("{Id}", Name = "PostById")]
         public async Task<IActionResult> GetPost(int id)
         {
@@ -31,6 +35,7 @@ namespace WorkingWithAPIApplication.Controllers
             return Ok(post);
         }
         [HttpPost("Create")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> CreatePost([FromBody] PostForCreation PostID)
         {
             try

@@ -1,5 +1,5 @@
 ﻿@using System.Security.Claims;
-@model List<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Posts>
+@model List<PROJECT_Reddit_wanna_be_.Models.Posts>
 
 @{
     Layout = "_LayoutPosts";
@@ -54,7 +54,7 @@
     <tr>
       
     </tr>
-    @foreach (var post in Model ?? Enumerable.Empty<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Posts>())
+    @foreach (var post in Model ?? Enumerable.Empty<PROJECT_Reddit_wanna_be_.Models.Posts>())
     {
         <tr>
             <td>@post.Content</td>
