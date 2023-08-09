@@ -6,6 +6,7 @@ using PROJECT_Reddit_wanna_be_.Models;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace PROJECT_Reddit_wanna_be_.Controllers
 {
@@ -20,6 +21,16 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         public IActionResult Login()
         {
             return View();
+        }
+        private Guid GetCurrentUserToken()
+        {
+            var claim = HttpContext.User.Claims;
+            var userTokenClaim = claim.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userTokenClaim != null && Guid.TryParse(userTokenClaim.Value, out Guid userToken))
+            {
+                return userToken;
+            }
+            return Guid.Empty;
         }
 
         [HttpPost]

@@ -57,6 +57,7 @@
     @foreach (var post in Model ?? Enumerable.Empty<PROJECT_Reddit_wanna_be_.Models.Posts>())
     {
         <tr>
+            <td>@post.Username</td>
             <td>@post.Content</td>
             <td>@post.PostedDate</td>
             <td>

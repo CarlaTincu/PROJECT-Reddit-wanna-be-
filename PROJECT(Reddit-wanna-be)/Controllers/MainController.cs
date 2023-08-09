@@ -7,9 +7,11 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PROJECT_Reddit_wanna_be_.Models;
 using PROJECT_Reddit_wanna_be_.Project.Data.Entities;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 namespace PROJECT_Reddit_wanna_be_.Controllers
@@ -146,9 +148,9 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             return View();
         }
         [HttpPost]
-        public async Task<IActionResult> CreatePost(Posts post,int topicId, int userId)
+        public async Task<IActionResult> CreatePost(Posts post,int topicId)
         {
-            post.UserID = userId;
+            
             if (true)
             {
                 using (HttpClient client = new HttpClient())
@@ -165,37 +167,47 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
                             if (!string.IsNullOrEmpty(jwtToken))
                             {
+
                                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
-                                string json = JsonConvert.SerializeObject(post);
-                                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                                var tokenHandler = new JwtSecurityTokenHandler();
+                                var token = tokenHandler.ReadJwtToken(jwtToken);
 
-                                HttpResponseMessage response = await client.PostAsync("api/posts/Create", content);
-
-                                if (response.IsSuccessStatusCode)
+                                // Get the user's ID claim from the token
+                                var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
+                                if (userIdClaim != null)
                                 {
+                                    string userId = userIdClaim.Value;
+                                    post.UserID = int.Parse(userId);
+                                    string json = JsonConvert.SerializeObject(post);
+                                    StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                                    HttpResponseMessage response = await client.PostAsync("api/posts/Create", content);
 
-                                    string responseBody = await response.Content.ReadAsStringAsync();
-                                    var createdPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(responseBody);
-                                    int postId = createdPost.Id;
-
-                                    HttpResponseMessage getPostResponse = await client.GetAsync($"api/posts/{postId}");
-
-                                    if (getPostResponse.IsSuccessStatusCode)
+                                    if (response.IsSuccessStatusCode)
                                     {
-                                        string getPostResponseBody = await getPostResponse.Content.ReadAsStringAsync();
-                                        var retrievedPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(getPostResponseBody);
 
-                                        return RedirectToAction("PostByTopic", "Main", new {topicId = topicId});
+                                        string responseBody = await response.Content.ReadAsStringAsync();
+                                        var createdPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(responseBody);
+                                        int postId = createdPost.Id;
+
+                                        HttpResponseMessage getPostResponse = await client.GetAsync($"api/posts/{postId}");
+
+                                        if (getPostResponse.IsSuccessStatusCode)
+                                        {
+                                            string getPostResponseBody = await getPostResponse.Content.ReadAsStringAsync();
+                                            var retrievedPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(getPostResponseBody);
+
+                                            return RedirectToAction("PostByTopic", "Main", new { topicId = topicId });
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                                        }
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                                        Console.WriteLine("JWT token value not found in the cookie.");
                                     }
-                                }
-                                else
-                                {
-                                    Console.WriteLine("JWT token value not found in the cookie.");
                                 }
                             }
                         }

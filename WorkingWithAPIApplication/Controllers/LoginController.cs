@@ -52,6 +52,7 @@ namespace WorkingWithAPIApplication.Controllers
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
+                new Claim("UserID",user.ID.ToString()),
                 new Claim(ClaimTypes.NameIdentifier,user.Username),
                 new Claim(ClaimTypes.Email,user.Email),
             };
