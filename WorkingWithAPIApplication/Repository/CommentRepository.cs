@@ -17,11 +17,10 @@ namespace WorkingWithAPIApplication.Repository
         public async Task<int> CreateComment(CommentForCreation comment)
         {
             var query = @"INSERT INTO Comments(CommentID, UserID, PostID, Content, PostedDate)
-                 VALUES (@CommentID, @UserID, @PostID, @Content, @PostedDate)";
+                 VALUES (@CommentID, @UserID, @PostID, @Content, @PostedDate) SELECT CAST(SCOPE_IDENTITY() as int)";
             comment.PostedDate = DateTime.Now;
             string DatetimeString = comment.PostedDate.ToString();
             comment.CommmentID = Guid.NewGuid();
-            Console.WriteLine(comment.CommmentID);
             var parameters = new DynamicParameters();
 
             parameters.Add("CommentId", comment.CommmentID.ToString(), System.Data.DbType.String);
@@ -32,9 +31,8 @@ namespace WorkingWithAPIApplication.Repository
 
             using (var connection = _context.CreateConnection())
             {
-                return await connection.QuerySingleOrDefaultAsync<int>(query, parameters);
-
-                
+                var id = await connection.QuerySingleOrDefaultAsync<int>(query, parameters);
+                return id;
             }
         }
 

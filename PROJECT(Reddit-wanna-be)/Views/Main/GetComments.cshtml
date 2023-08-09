@@ -1,13 +1,13 @@
-﻿@model List<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Comments>
+﻿@model List<PROJECT_Reddit_wanna_be_.Models.Comments>
 @{
     Layout = "_LayoutComments";
+    var postId = ViewBag.PostId;
 }
 <h1>COMMENTS</h1>
 
 <form asp-controller="Main" asp-action="CreateComment">
-    <input type="Content" name="Content" placeholder="Content" required />
-    <input type="UserID" name="UserID" placeholder="UserID" required />
-    <input type="PostID" name="PostID" placeholder="PostID" required />
+    <input type="number" name="comment.PostID" hidden value="@Model.FirstOrDefault()?.PostID"/>
+    <input type="text" name="comment.Content" placeholder="Content" required />
     <button type="submit" class="btn btn-primary">POST</button>
 </form>
 <!DOCTYPE html>
@@ -49,12 +49,15 @@
 </head>
 <body>
     <table>
-        @foreach (var comment in Model)
+        @foreach (var comment in Model ?? Enumerable.Empty<PROJECT_Reddit_wanna_be_.Models.Comments>())
         {
             <tr>
                 <td>@comment.Username</td>
                 <td>@comment.Content</td>
                 <td>@comment.PostedDate</td>
+               @* <td>
+                    <a class="show-comments" href="@Url.Action("GetComments", "Main", new { commentId = comment.ID })">Comments</a>
+                </td>*@
             </tr>
         }
     </table>

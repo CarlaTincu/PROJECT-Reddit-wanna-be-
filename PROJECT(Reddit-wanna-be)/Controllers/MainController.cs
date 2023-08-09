@@ -173,7 +173,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                                 var tokenHandler = new JwtSecurityTokenHandler();
                                 var token = tokenHandler.ReadJwtToken(jwtToken);
 
-                                // Get the user's ID claim from the token
+                          
                                 var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
                                 if (userIdClaim != null)
                                 {
@@ -228,26 +228,78 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CreateComment(Comments comment, int postId, int userId)
+        public async Task<IActionResult> CreateComment(Comments comment)
         {
-           
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://localhost:7030/");
-                HttpResponseMessage response = await client.PostAsync("api/comments/Create", new StringContent(JsonConvert.SerializeObject(comment), Encoding.UTF8, "application/json"));
+                string authToken = Request.Cookies["jwt"];
 
-                if (response.IsSuccessStatusCode)
+                if (!string.IsNullOrEmpty(authToken))
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    var resultComment = JsonConvert.DeserializeObject<Comments>(responseBody);
-                    return RedirectToAction("GetComments", new {postId = postId, userId = userId});
+                    try
+                    {
+                        JObject authTokenObject = JObject.Parse(authToken);
+                        string jwtToken = authTokenObject["token"]?.ToString();
+
+                        if (!string.IsNullOrEmpty(jwtToken))
+                        {
+
+                            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+
+                            var tokenHandler = new JwtSecurityTokenHandler();
+                            var token = tokenHandler.ReadJwtToken(jwtToken);
+
+
+                            var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
+                            if (userIdClaim != null)
+                            {
+                                string userId = userIdClaim.Value;
+                                comment.UserID = int.Parse(userId);
+                                string json = JsonConvert.SerializeObject(comment);
+                                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                                HttpResponseMessage response = await client.PostAsync("api/comments/Create", content);
+
+                                if (response.IsSuccessStatusCode)
+                                {
+
+                                    string responseBody = await response.Content.ReadAsStringAsync();
+                                    var createdComment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(responseBody);
+                                    int commentId = createdComment.ID;
+
+                                    HttpResponseMessage getCommentResponse = await client.GetAsync($"api/comments/{commentId}");
+
+                                    if (getCommentResponse.IsSuccessStatusCode)
+                                    {
+                                        string getCommentResponseBody = await getCommentResponse.Content.ReadAsStringAsync();
+                                        var retrievedComment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(getCommentResponseBody);
+
+                                        return RedirectToAction("GetComments", "Main", new { postId = comment.PostID});
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("JWT token value not found in the cookie.");
+                                }
+                            }
+                        }
+                    }
+                    catch (JsonReaderException)
+                    {
+                        Console.WriteLine("Invalid JSON format in the cookie.");
+                    }
                 }
                 else
                 {
-                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                    return View(null);
+                    Console.WriteLine("No JWT token cookie found.");
                 }
+
             }
+            return View(null);
         }
         [HttpGet]
         public async Task<IActionResult> GetComments(int postId)
@@ -260,7 +312,8 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                 if (response.IsSuccessStatusCode)
                 {
                     string responseBody = await response.Content.ReadAsStringAsync();
-                    var comments = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Comments>>(responseBody);
+                    var comments = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Comments>>(responseBody);
+                    ViewBag.PostId = postId;
                     return View("GetComments", comments);
                 }
                 else
@@ -268,7 +321,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                     Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                 }
             }
-            return View(new List<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Comments>());
+            return View(new List<PROJECT_Reddit_wanna_be_.Models.Comments>());
         }
      
     }

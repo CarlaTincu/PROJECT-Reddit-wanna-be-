@@ -22,7 +22,7 @@ namespace WorkingWithAPIApplication.Controllers
         public async Task<IActionResult> CreateComment([FromBody] CommentForCreation CommentID)
         {
             var createComment = await commentRepository.CreateComment(CommentID);
-            return Ok(new { ID = CommentID });
+            return Ok(new { ID = createComment });
         }
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateComment(int id, [FromBody] CommentForUpdate commentUpdated)
