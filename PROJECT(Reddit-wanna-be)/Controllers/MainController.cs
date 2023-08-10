@@ -13,6 +13,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using WorkingWithAPIApplication.Entities;
 
 namespace PROJECT_Reddit_wanna_be_.Controllers
 {
@@ -357,7 +358,6 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                 {
                     try
                     {
-
                         JObject authTokenObject = JObject.Parse(authToken);
                         string jwtToken = authTokenObject["token"]?.ToString();
                         
@@ -396,9 +396,76 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
             return RedirectToAction("GetComments", "Main", new { postId = postId });
         }
+        [HttpGet]
+        public async Task<IActionResult> EditComment(int commentId)
+        {
+            
+                using (HttpClient client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7030/");
+                    HttpResponseMessage response = await client.GetAsync($"api/comments/{commentId}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        
+                        var comment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(responseBody);
 
+                        return View(comment);
+                    }
+                    else
+                    {
+                        // Handle error
+                        return View("Error");
+                    }
+                }
+            
+        }
 
+     
+        public async Task<IActionResult> EditComment(int commentId, string Content)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://localhost:7030/");
+                string authToken = Request.Cookies["jwt"];
+                if(!string.IsNullOrEmpty(authToken))
+                {
+                    JObject authTokenObject = JObject.Parse(authToken);
+                    string jwtToken = authTokenObject["token"]?.ToString();
 
+                    if (!string.IsNullOrEmpty(jwtToken))
+                    {
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                        HttpResponseMessage response = await client.GetAsync($"api/comments/{commentId}");
+                        if (response.IsSuccessStatusCode)
+                        { 
+                            var responseBody = await response.Content.ReadAsStringAsync();
+                            var comment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(responseBody);
+                            Comments updatedComment = new Comments
+                            {
+                                Content = Content
+                            };
+                            HttpResponseMessage UpdatedCommentResponse = await client.PutAsJsonAsync($"api/comments/EDIT/{commentId}", updatedComment);
+
+                            comment.Content = Content;
+                            if (UpdatedCommentResponse.IsSuccessStatusCode)
+                            {
+                                var UpdatedCommentResponseBody = await response.Content.ReadAsStringAsync();
+                                var UpdatedComment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(UpdatedCommentResponseBody);
+                                return RedirectToAction("GetComments", "Main", new { postId = UpdatedComment.PostID });
+                            }
+                        }
+                        else
+                        {
+                            return View("Error");
+                        }
+                    }
+                        
+                }
+                
+            }
+            return View(null);
+        }
     }
 }
 

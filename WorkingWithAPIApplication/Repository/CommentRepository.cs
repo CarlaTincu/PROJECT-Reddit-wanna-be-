@@ -72,11 +72,12 @@ namespace WorkingWithAPIApplication.Repository
 
         public async Task UpdateComment(int id, CommentForUpdate comment)
         {
-            var query = "UPDATE Comments SET Content = @Content";
+            var query = "UPDATE Comments SET Content = @Content WHERE ID  = @ID";
             var parameters = new DynamicParameters();
             comment.PostedDate = DateTime.Now;
             string DatetimeString = comment.PostedDate.ToString();
             comment.CommmentID = Guid.NewGuid();
+            parameters.Add("ID", id, System.Data.DbType.Int32);
             parameters.Add("CommentId", comment.CommmentID.ToString(), System.Data.DbType.String);
             parameters.Add("UserID", comment.UserID, System.Data.DbType.Int32);
             parameters.Add("PostID", comment.PostID, System.Data.DbType.Int32);

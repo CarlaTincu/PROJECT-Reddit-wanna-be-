@@ -24,7 +24,8 @@ namespace WorkingWithAPIApplication.Controllers
             var createComment = await commentRepository.CreateComment(CommentID);
             return Ok(new { ID = createComment });
         }
-        [HttpPut("{id}")]
+        [HttpPut("EDIT/{id}")]
+        [Authorize]
         public async Task<IActionResult> UpdateComment(int id, [FromBody] CommentForUpdate commentUpdated)
         {
             var theComment = await commentRepository.GetComment(id);
@@ -49,7 +50,7 @@ namespace WorkingWithAPIApplication.Controllers
             var comments = await commentRepository.GetComments(PostId);
             return Ok(comments);
         }
-        [HttpGet("{Id}", Name = "CommentById")]
+        [HttpGet("{id}", Name = "CommentById")]
         public async Task<IActionResult> GetPost(int id)
         {
             var comment = await commentRepository.GetComment(id);

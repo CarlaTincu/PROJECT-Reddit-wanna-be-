@@ -1,0 +1,12 @@
+﻿@model Comments
+@{
+    Layout = null;
+}
+
+<h2>Edit Comment</h2>
+<form method="post" asp-action="EditComment">
+    <input type="hidden" name="commentId" value="@Model.ID" />
+    <textarea name="Content" rows="4" cols="50" required>@Model.Content</textarea>
+    <br />
+    <button type="submit">Save Changes</button>
+</form>

@@ -68,16 +68,13 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
             return View();
         }
-
         [HttpPost]
-        [Authorize]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> LogoutConfirmed()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        
             return RedirectToAction("Index", "Home");
         }
-
 
         public IActionResult Register()
         {

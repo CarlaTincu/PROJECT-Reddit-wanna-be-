@@ -73,6 +73,12 @@
                         <a  href="@Url.Action("DeleteComment", "Main", new { commentId = comment.ID, postId = comment.PostID })">Delete</a>
                     }
                 </td>
+                <td>
+                    @if (ViewBag.UserID == comment.UserID)
+                    {
+                        <a href="@Url.Action("EditComment", "Main", new { commentId = comment.ID, postId = comment.PostID })">Edit</a>
+                    }
+                </td>
 
                     
          
