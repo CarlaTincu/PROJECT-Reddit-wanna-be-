@@ -34,8 +34,8 @@ namespace WorkingWithAPIApplication.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePost(int id)
+        [HttpDelete("DELETE/{id}")]
+        public async Task<IActionResult> DeleteComment(int id)
         {
             var User = await commentRepository.GetComment(id);
             if (User == null)

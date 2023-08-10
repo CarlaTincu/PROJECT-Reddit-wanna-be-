@@ -19,7 +19,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
     public class MainController : Controller
     {
-        
+
         public async Task<IActionResult> MainPage()
         {
             if (true)
@@ -101,20 +101,20 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                     {
                         Console.WriteLine("No JWT token cookie found.");
                     }
-                 
+
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
-               
+
             }
 
             return View(null);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Topics() 
+        public async Task<IActionResult> Topics()
         {
             return View();
         }
@@ -132,7 +132,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                 {
                     string responseBody = await response.Content.ReadAsStringAsync();
                     var posts = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(responseBody);
-                    return View("PostByTopic",posts); 
+                    return View("PostByTopic", posts);
                 }
                 else
                 {
@@ -148,9 +148,9 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             return View();
         }
         [HttpPost]
-        public async Task<IActionResult> CreatePost(Posts post,int topicId)
+        public async Task<IActionResult> CreatePost(Posts post, int topicId)
         {
-            
+
             if (true)
             {
                 using (HttpClient client = new HttpClient())
@@ -173,7 +173,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                                 var tokenHandler = new JwtSecurityTokenHandler();
                                 var token = tokenHandler.ReadJwtToken(jwtToken);
 
-                          
+
                                 var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
                                 if (userIdClaim != null)
                                 {
@@ -272,9 +272,9 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                                     if (getCommentResponse.IsSuccessStatusCode)
                                     {
                                         string getCommentResponseBody = await getCommentResponse.Content.ReadAsStringAsync();
-                                        var retrievedComment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(getCommentResponseBody);
+                                        var retrievedComment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(getCommentResponseBody);
 
-                                        return RedirectToAction("GetComments", "Main", new { postId = comment.PostID});
+                                        return RedirectToAction("GetComments", "Main", new { postId = comment.PostID });
                                     }
                                     else
                                     {
@@ -307,22 +307,98 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://localhost:7030/");
-                HttpResponseMessage response = await client.GetAsync($"api/comments/PostID/{postId}");
+                string authToken = Request.Cookies["jwt"];
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    JObject authTokenObject = JObject.Parse(authToken);
+                    string jwtToken = authTokenObject["token"]?.ToString();
+                    if (!string.IsNullOrEmpty(jwtToken))
+                    {
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                        var tokenHandler = new JwtSecurityTokenHandler();
+                        var token = tokenHandler.ReadJwtToken(jwtToken);
+                        var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
 
-                if (response.IsSuccessStatusCode)
-                {
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    var comments = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Comments>>(responseBody);
-                    ViewBag.PostId = postId;
-                    return View("GetComments", comments);
+                        if (userIdClaim != null) 
+                        {
+                            string userId = userIdClaim.Value;
+                            ViewBag.UserID = int.Parse(userId);
+                            HttpResponseMessage response = await client.GetAsync($"api/comments/PostID/{postId}");
+
+                            if (response.IsSuccessStatusCode)
+                            {
+                                string responseBody = await response.Content.ReadAsStringAsync();
+                                var comments = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Comments>>(responseBody);
+                                ViewBag.PostId = postId;
+                                return View("GetComments", comments);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                            }
+                        }
+                            
+                    }
+                        
                 }
-                else
-                {
-                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                }
+                    
             }
             return View(new List<PROJECT_Reddit_wanna_be_.Models.Comments>());
         }
-     
+ 
+        public async Task<IActionResult> DeleteComment(int commentId, int postId)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://localhost:7030/");
+                string authToken = Request.Cookies["jwt"];
+
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    try
+                    {
+
+                        JObject authTokenObject = JObject.Parse(authToken);
+                        string jwtToken = authTokenObject["token"]?.ToString();
+                        
+                        if (!string.IsNullOrEmpty(jwtToken))
+                        {
+                            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                           
+
+                            HttpResponseMessage response = await client.DeleteAsync($"api/comments/DELETE/{commentId}");
+
+                            if (response.IsSuccessStatusCode)
+                            {
+                                // Deletion was successful
+                                return RedirectToAction("GetComments", "Main", new { postId = postId });
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("JWT token value not found in the cookie.");
+                        }
+                    }
+                    catch (JsonReaderException)
+                    {
+                        Console.WriteLine("Invalid JSON format in the cookie.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No JWT token cookie found.");
+                }
+            }
+
+            return RedirectToAction("GetComments", "Main", new { postId = postId });
+        }
+
+
+
     }
 }
+

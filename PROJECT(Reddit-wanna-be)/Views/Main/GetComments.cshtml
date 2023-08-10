@@ -47,18 +47,36 @@
         }
     </style>
 </head>
-<body>
-    <table>
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Content</th>
+            <th>Posted Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
         @foreach (var comment in Model ?? Enumerable.Empty<PROJECT_Reddit_wanna_be_.Models.Comments>())
         {
             <tr>
                 <td>@comment.Username</td>
-                <td>@comment.Content</td>
+                <td class="content">@comment.Content</td>
                 <td>@comment.PostedDate</td>
-               @* <td>
-                    <a class="show-comments" href="@Url.Action("GetComments", "Main", new { commentId = comment.ID })">Comments</a>
-                </td>*@
+
+                <td>
+                    @if (ViewBag.UserID == comment.UserID)
+                    {
+                        <a  href="@Url.Action("DeleteComment", "Main", new { commentId = comment.ID, postId = comment.PostID })">Delete</a>
+                    }
+                </td>
+
+                    
+         
             </tr>
         }
-    </table>
-</body>
+    </tbody>
+</table>

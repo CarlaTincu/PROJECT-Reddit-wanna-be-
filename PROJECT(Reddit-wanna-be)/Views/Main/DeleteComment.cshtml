@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Delete Comment";
+}
+
+<h2>Delete Comment</h2>
+
+@if (ViewBag.DeletionSuccessful)
+{
+    <p>Comment deleted successfully.</p>
+}
+else
+{
+    <p>An error occurred while deleting the comment.</p>
+}
+
+<a asp-action="GetComments" asp-controller="Main">Back to Comments</a>
