@@ -87,10 +87,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         }
 
 
-
-
         //TOPICS
-
 
 
 
@@ -161,12 +158,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         }
 
 
-
-
         //POSTS
-
-
-
 
 
         [HttpGet]
@@ -302,12 +294,6 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                 return View(null);
             }
         }
-
-
-
-
-
-
 
         public async Task<IActionResult> DeleteCommentsByPost(int postId)
         {
