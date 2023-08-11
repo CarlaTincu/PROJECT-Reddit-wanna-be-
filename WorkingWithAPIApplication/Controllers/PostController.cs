@@ -26,10 +26,10 @@ namespace WorkingWithAPIApplication.Controllers
             return Ok(posts);
         }
 
-        [HttpGet("{Id}", Name = "PostById")]
-        public async Task<IActionResult> GetPost(int id)
+        [HttpGet("{postId}", Name = "PostById")]
+        public async Task<IActionResult> GetPost(int postId)
         {
-            var post = await postRepository.GetPost(id);
+            var post = await postRepository.GetPost(postId);
             if (post == null)
                 return NotFound();
             return Ok(post);
@@ -51,13 +51,13 @@ namespace WorkingWithAPIApplication.Controllers
             
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePost(int id, [FromBody] PostForUpdate PostU)
+        [HttpPut("EDIT/{postId}")]
+        public async Task<IActionResult> UpdatePost(int postId, [FromBody] PostForUpdate PostU)
         {
-            var Post = await postRepository.GetPost(id);
+            var Post = await postRepository.GetPost(postId);
             if (Post == null)
                 return NotFound();
-            await postRepository.UpdatePost(id, PostU);
+            await postRepository.UpdatePost(postId, PostU);
             return NoContent();
         }
 

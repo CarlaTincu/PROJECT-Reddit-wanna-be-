@@ -50,10 +50,11 @@ namespace WorkingWithAPIApplication.Repository
                 return post;
             }
         }
-        public async Task UpdatePost(int id, PostForUpdate post)
+        public async Task UpdatePost(int postId, PostForUpdate post)
         {
-            var query = "UPDATE Posts SET Content = @Content";
+            var query = "UPDATE Posts SET Content = @Content WHERE ID = @ID";
             var parameters = new DynamicParameters();
+            parameters.Add("ID", postId, System.Data.DbType.Int32);
             parameters.Add("Content", post.Content, System.Data.DbType.String);
             parameters.Add("UserId", post.UserID, System.Data.DbType.Int32);
             parameters.Add("TopicId", post.TopicID, System.Data.DbType.Int32);

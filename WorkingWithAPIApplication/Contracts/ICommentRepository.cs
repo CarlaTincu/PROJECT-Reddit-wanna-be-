@@ -11,5 +11,6 @@ namespace WorkingWithAPIApplication.Contracts
         public Task<int> CreateComment(CommentForCreation comment);
         public Task UpdateComment(int id, CommentForUpdate comment);
         public Task DeleteComment(int id);
+        public Task DeleteCommentsByPostID(int postId); 
     }
 }

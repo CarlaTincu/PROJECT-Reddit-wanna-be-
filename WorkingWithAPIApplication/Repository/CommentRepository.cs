@@ -45,6 +45,15 @@ namespace WorkingWithAPIApplication.Repository
             }
         }
 
+        public async Task DeleteCommentsByPostID(int postId)
+        {
+            var query = "DELETE FROM Comments WHERE PostID = @PostID";
+            using (var connection = _context.CreateConnection())
+            {
+                await connection.ExecuteAsync(query, new { PostID = postId });
+            }
+        }
+
         public async Task<Comment> GetComment(int id)
         {
             using (var connection = _context.CreateConnection())

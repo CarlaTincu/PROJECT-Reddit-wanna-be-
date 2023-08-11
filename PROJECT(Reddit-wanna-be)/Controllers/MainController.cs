@@ -21,32 +21,34 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
     public class MainController : Controller
     {
 
+
+
+        //TOPICS
         public async Task<IActionResult> MainPage()
         {
-            if (true)
-            {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri("https://localhost:7030/");
-                    HttpResponseMessage response = await client.GetAsync("api/topics");
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var responseBody = await response.Content.ReadAsStringAsync();
-                        var topicsList = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>>(responseBody);
-                        var model = new MainPageModel
-                        {
-                            TopicsList = topicsList
-                        };
 
-                        return View(model);
-                    }
-                    else
+            using (HttpClient client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://localhost:7030/");
+                HttpResponseMessage response = await client.GetAsync("api/topics");
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    var topicsList = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>>(responseBody);
+                    var model = new MainPageModel
                     {
-                        // Handle error
-                        return View("Error");
-                    }
+                        TopicsList = topicsList
+                    };
+
+                    return View(model);
+                }
+                else
+                {
+                    // Handle error
+                    return View("Error");
                 }
             }
+
         }
 
 
@@ -120,28 +122,47 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             return View();
         }
 
+        //POSTS
+
         [HttpGet]
         public async Task<IActionResult> PostByTopic(int topicId)
         {
             ViewBag.TopicID = topicId;
+
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://localhost:7030/");
-                HttpResponseMessage response = await client.GetAsync($"api/posts/PostsByTopic/{topicId}");
+                string authToken = Request.Cookies["jwt"];
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    JObject authTokenObject = JObject.Parse(authToken);
+                    string jwtToken = authTokenObject["token"]?.ToString();
+                    if (!string.IsNullOrEmpty(jwtToken))
+                    {
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                        var tokenHandler = new JwtSecurityTokenHandler();
+                        var token = tokenHandler.ReadJwtToken(jwtToken);
+                        var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
 
-                if (response.IsSuccessStatusCode)
-                {
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    var posts = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(responseBody);
-                    return View("PostByTopic", posts);
-                }
-                else
-                {
-                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                        if (userIdClaim != null)
+                        {
+                            string userId = userIdClaim.Value;
+                            ViewBag.UserID = int.Parse(userId);
+                            client.BaseAddress = new Uri("https://localhost:7030/");
+                            HttpResponseMessage response = await client.GetAsync($"api/posts/PostsByTopic/{topicId}");
+
+                            if (response.IsSuccessStatusCode)
+                            {
+                                string responseBody = await response.Content.ReadAsStringAsync();
+                                var posts = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(responseBody);
+                                return View("PostByTopic", posts);
+                            }
+                        }
+                    }
                 }
             }
             return View(new List<PROJECT_Reddit_wanna_be_.Models.Posts>());
-        }
+        } 
         [HttpPost]
         public async Task<IActionResult> PostByTopic()
         {
@@ -151,9 +172,6 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePost(Posts post, int topicId)
         {
-
-            if (true)
-            {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
@@ -223,9 +241,123 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                     }
 
                 }
-            }
             return View(null);
         }
+        [HttpGet]
+        public async Task<IActionResult> EditPost(int postId)
+        {
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://localhost:7030/");
+                HttpResponseMessage response = await client.GetAsync($"api/posts/{postId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync();
+
+                    var post = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(responseBody);
+
+                    return View(post);
+                }
+                else
+                {
+                    // Handle error
+                    return View("Error");
+                }
+            }
+
+        }
+        public async Task<IActionResult> EditPost(int postId, string Content)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://localhost:7030/");
+                string authToken = Request.Cookies["jwt"];
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    JObject authTokenObject = JObject.Parse(authToken);
+                    string jwtToken = authTokenObject["token"]?.ToString();
+
+                    if (!string.IsNullOrEmpty(jwtToken))
+                    {
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                        HttpResponseMessage response = await client.GetAsync($"api/posts/{postId}");
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var responseBody = await response.Content.ReadAsStringAsync();
+                            var post = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(responseBody);
+                            Posts updatedPost = post;
+                            updatedPost.Content = Content;
+                            HttpResponseMessage UpdatedPostResponse = await client.PutAsJsonAsync($"api/posts/EDIT/{postId}", updatedPost);
+                            if (UpdatedPostResponse.IsSuccessStatusCode)
+                            {
+                                var UpdatedPostResponseBody = await response.Content.ReadAsStringAsync();
+                                var UpdatedPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(UpdatedPostResponseBody);
+                                return RedirectToAction("PostByTopic", "Main", new { topicId = UpdatedPost.TopicID });
+                            }
+                            else
+                            {
+                                return View("Error");
+                            }
+                        }
+
+                    }
+
+                }
+                return View(null);
+            }
+        }
+
+        public async Task<IActionResult> DeleteCommentsByPost(int postId)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://localhost:7030/");
+                string authToken = Request.Cookies["jwt"];
+
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    try
+                    {
+                        JObject authTokenObject = JObject.Parse(authToken);
+                        string jwtToken = authTokenObject["token"]?.ToString();
+
+                        if (!string.IsNullOrEmpty(jwtToken))
+                        {
+                            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+
+                            HttpResponseMessage response = await client.DeleteAsync($"api/comments/DeleteByPost/{postId}");
+
+                            if (response.IsSuccessStatusCode)
+                            {
+                                // Deletion was successful
+                                return RedirectToAction("MainPage");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("JWT token value not found in the cookie.");
+                        }
+                    }
+                    catch (JsonReaderException)
+                    {
+                        Console.WriteLine("Invalid JSON format in the cookie.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No JWT token cookie found.");
+                }
+            }
+
+            return RedirectToAction("MainPage");
+        }
+
+        //COMMENTS
 
 
         [HttpPost]
@@ -275,7 +407,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                                         string getCommentResponseBody = await getCommentResponse.Content.ReadAsStringAsync();
                                         var retrievedComment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(getCommentResponseBody);
 
-                                        return RedirectToAction("GetComments", "Main", new { postId = comment.PostID });
+                                        return RedirectToAction("GetComments", "Main", new { postId = retrievedComment.PostID });
                                     }
                                     else
                                     {
@@ -446,8 +578,6 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                                 Content = Content
                             };
                             HttpResponseMessage UpdatedCommentResponse = await client.PutAsJsonAsync($"api/comments/EDIT/{commentId}", updatedComment);
-
-                            comment.Content = Content;
                             if (UpdatedCommentResponse.IsSuccessStatusCode)
                             {
                                 var UpdatedCommentResponseBody = await response.Content.ReadAsStringAsync();
@@ -466,6 +596,8 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             }
             return View(null);
         }
+
+        
     }
 }
 

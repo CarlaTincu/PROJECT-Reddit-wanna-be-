@@ -1,0 +1,12 @@
+﻿@model Posts
+@{
+    Layout = null;
+}
+
+<h2>Edit Post Content</h2>
+<form method="post" asp-action="EditPost">
+    <input type="hidden" name="postId" value="@Model.Id" />
+    <textarea name="Content" rows="4" cols="50" required>@Model.Content</textarea>
+    <br />
+    <button type="submit">Save Changes</button>
+</form>
