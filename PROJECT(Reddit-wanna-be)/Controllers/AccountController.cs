@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using RestSharp;
 
 namespace PROJECT_Reddit_wanna_be_.Controllers
 {
@@ -72,7 +73,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LogoutConfirmed()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            Response.Cookies.Delete("jwt");
             return RedirectToAction("Index", "Home");
         }
 

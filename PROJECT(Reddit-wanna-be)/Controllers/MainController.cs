@@ -1,4 +1,5 @@
 ﻿using Azure;
+using DocumentFormat.OpenXml.Vml.Spreadsheet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,12 +22,80 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
     public class MainController : Controller
     {
 
+        private HttpClient _client;
+        public MainController()
+        {
+            _client = new HttpClient();
+            _client.BaseAddress = new Uri("https://localhost:7030/");
+        }
+        private void ConfigureHttpClient(HttpClient client, string jwtToken)
+        {
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+        }
+
+        private async Task<string> GetJwtTokenAsync()
+        {
+            string authToken = Request.Cookies["jwt"];
+
+            if (!string.IsNullOrEmpty(authToken))
+            {
+                try
+                {
+                    JObject authTokenObject = JObject.Parse(authToken);
+                    return authTokenObject["token"]?.ToString();
+                }
+                catch (JsonReaderException)
+                {
+                    Console.WriteLine("Invalid JSON format in the cookie.");
+                }
+            }
+
+            return null;
+        }
+
+        private string GetUserIdFromJwtToken(string jwtToken)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.ReadJwtToken(jwtToken);
+            var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
+
+            if (userIdClaim != null)
+            {
+                return userIdClaim.Value;
+            }
+            return null;
+        }
+        private void ConfigureHttpClient(string jwtToken)
+        {
+            if (!string.IsNullOrEmpty(jwtToken))
+            {
+                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+            }
+        }
+        private async Task<T> GetApiResponseAsync<T>(HttpResponseMessage response)
+        {
+            if (response.IsSuccessStatusCode)
+            {
+                string responseBody = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<T>(responseBody);
+            }
+            else
+            {
+                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                return default(T);
+            }
+        }
+
+
 
 
         //TOPICS
+
+
+
+
         public async Task<IActionResult> MainPage()
         {
-
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://localhost:7030/");
@@ -48,73 +117,42 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                     return View("Error");
                 }
             }
-
         }
-
 
         [HttpPost]
         public async Task<IActionResult> CreateTopic(Topics topic)
         {
             try
             {
-                using (HttpClient client = new HttpClient())
+                string jwtToken = await GetJwtTokenAsync();
+                if (!string.IsNullOrEmpty(jwtToken))
                 {
-                    client.BaseAddress = new Uri("https://localhost:7030/");
-                    string authToken = Request.Cookies["jwt"];
-
-                    if (!string.IsNullOrEmpty(authToken))
+                    ConfigureHttpClient(_client, jwtToken);
+                    string json = JsonConvert.SerializeObject(topic);
+                    StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = await _client.PostAsync("api/topics/Create", content);
+                    var createdTopic = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(response);
+                    if (createdTopic != null)
                     {
-                        try
-                        {
-                            JObject authTokenObject = JObject.Parse(authToken);
-                            string jwtToken = authTokenObject["token"]?.ToString();
-
-                            if (!string.IsNullOrEmpty(jwtToken))
-                            {
-                                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-
-                                string json = JsonConvert.SerializeObject(topic);
-                                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                                HttpResponseMessage response = await client.PostAsync("api/topics/Create", content);
-
-                                if (response.IsSuccessStatusCode)
-                                {
-                                    string responseBody = await response.Content.ReadAsStringAsync();
-                                    var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(responseBody);
-                                    return RedirectToAction("MainPage");
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("JWT token value not found in the cookie.");
-                            }
-                        }
-                        catch (JsonReaderException)
-                        {
-                            Console.WriteLine("Invalid JSON format in the cookie.");
-                        }
+                        return RedirectToAction("MainPage");
                     }
                     else
                     {
-                        Console.WriteLine("No JWT token cookie found.");
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                     }
-
+                }
+                else
+                {
+                    Console.WriteLine("JWT token value not found in the cookie.");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
-
             }
-
             return View(null);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Topics()
@@ -122,150 +160,107 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             return View();
         }
 
+
+
+
         //POSTS
+
+
+
+
 
         [HttpGet]
         public async Task<IActionResult> PostByTopic(int topicId)
         {
             ViewBag.TopicID = topicId;
+            string jwtToken = await GetJwtTokenAsync();
 
-            using (HttpClient client = new HttpClient())
+            if (!string.IsNullOrEmpty(jwtToken))
             {
-                client.BaseAddress = new Uri("https://localhost:7030/");
-                string authToken = Request.Cookies["jwt"];
-                if (!string.IsNullOrEmpty(authToken))
+                ConfigureHttpClient(jwtToken);
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var token = tokenHandler.ReadJwtToken(jwtToken);
+                var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
+
+                if (userIdClaim != null)
                 {
-                    JObject authTokenObject = JObject.Parse(authToken);
-                    string jwtToken = authTokenObject["token"]?.ToString();
-                    if (!string.IsNullOrEmpty(jwtToken))
+                    string userId = userIdClaim.Value;
+                    ViewBag.UserID = int.Parse(userId);
+                    HttpResponseMessage response = await _client.GetAsync($"api/posts/PostsByTopic/{topicId}");
+                    var posts = await GetApiResponseAsync<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(response);
+
+                    if (posts != null)
                     {
-                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                        var tokenHandler = new JwtSecurityTokenHandler();
-                        var token = tokenHandler.ReadJwtToken(jwtToken);
-                        var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
-
-                        if (userIdClaim != null)
-                        {
-                            string userId = userIdClaim.Value;
-                            ViewBag.UserID = int.Parse(userId);
-                            client.BaseAddress = new Uri("https://localhost:7030/");
-                            HttpResponseMessage response = await client.GetAsync($"api/posts/PostsByTopic/{topicId}");
-
-                            if (response.IsSuccessStatusCode)
-                            {
-                                string responseBody = await response.Content.ReadAsStringAsync();
-                                var posts = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(responseBody);
-                                return View("PostByTopic", posts);
-                            }
-                        }
+                        return View("PostByTopic", posts);
                     }
                 }
             }
             return View(new List<PROJECT_Reddit_wanna_be_.Models.Posts>());
-        } 
+        }
         [HttpPost]
         public async Task<IActionResult> PostByTopic()
         {
 
             return View();
         }
+
         [HttpPost]
         public async Task<IActionResult> CreatePost(Posts post, int topicId)
         {
-                using (HttpClient client = new HttpClient())
+            string jwtToken = await GetJwtTokenAsync();
+            if (!string.IsNullOrEmpty(jwtToken))
+            {
+                ConfigureHttpClient(jwtToken);
+                string userId = GetUserIdFromJwtToken(jwtToken);
+                if (userId != null)
                 {
-                    client.BaseAddress = new Uri("https://localhost:7030/");
-                    string authToken = Request.Cookies["jwt"];
-
-                    if (!string.IsNullOrEmpty(authToken))
+                    post.UserID = int.Parse(userId);
+                    string json = JsonConvert.SerializeObject(post);
+                    StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = await _client.PostAsync("api/posts/Create", content);
+                    var createdPost = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(response);
+                    if (createdPost != null)
                     {
-                        try
+                        HttpResponseMessage getPostResponse = await _client.GetAsync($"api/posts/{createdPost.Id}");
+                        if (getPostResponse.IsSuccessStatusCode)
                         {
-                            JObject authTokenObject = JObject.Parse(authToken);
-                            string jwtToken = authTokenObject["token"]?.ToString();
-
-                            if (!string.IsNullOrEmpty(jwtToken))
-                            {
-
-                                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-
-                                var tokenHandler = new JwtSecurityTokenHandler();
-                                var token = tokenHandler.ReadJwtToken(jwtToken);
-
-
-                                var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
-                                if (userIdClaim != null)
-                                {
-                                    string userId = userIdClaim.Value;
-                                    post.UserID = int.Parse(userId);
-                                    string json = JsonConvert.SerializeObject(post);
-                                    StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-                                    HttpResponseMessage response = await client.PostAsync("api/posts/Create", content);
-
-                                    if (response.IsSuccessStatusCode)
-                                    {
-
-                                        string responseBody = await response.Content.ReadAsStringAsync();
-                                        var createdPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(responseBody);
-                                        int postId = createdPost.Id;
-
-                                        HttpResponseMessage getPostResponse = await client.GetAsync($"api/posts/{postId}");
-
-                                        if (getPostResponse.IsSuccessStatusCode)
-                                        {
-                                            string getPostResponseBody = await getPostResponse.Content.ReadAsStringAsync();
-                                            var retrievedPost = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(getPostResponseBody);
-
-                                            return RedirectToAction("PostByTopic", "Main", new { topicId = topicId });
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("JWT token value not found in the cookie.");
-                                    }
-                                }
-                            }
+                            var retrievedPost = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(getPostResponse);
+                            return RedirectToAction("PostByTopic", "Main", new { topicId = topicId });
                         }
-                        catch (JsonReaderException)
+                        else
                         {
-                            Console.WriteLine("Invalid JSON format in the cookie.");
+                            Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("No JWT token cookie found.");
+                        Console.WriteLine("Failed to create post.");
                     }
-
                 }
+            }
+            else
+            {
+                Console.WriteLine("No JWT token found.");
+            }
             return View(null);
         }
+
+
+
         [HttpGet]
         public async Task<IActionResult> EditPost(int postId)
         {
-
-            using (HttpClient client = new HttpClient())
+            ConfigureHttpClient(_client, await GetJwtTokenAsync());
+            HttpResponseMessage response = await _client.GetAsync($"api/posts/{postId}");
+            if (response.IsSuccessStatusCode)
             {
-                client.BaseAddress = new Uri("https://localhost:7030/");
-                HttpResponseMessage response = await client.GetAsync($"api/posts/{postId}");
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseBody = await response.Content.ReadAsStringAsync();
-
-                    var post = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Posts>(responseBody);
-
-                    return View(post);
-                }
-                else
-                {
-                    // Handle error
-                    return View("Error");
-                }
+                var post = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(response);
+                return View(post);
             }
-
+            else
+            {
+                return View("Error");
+            }
         }
         public async Task<IActionResult> EditPost(int postId, string Content)
         {
@@ -308,91 +303,59 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             }
         }
 
+
+
+
+
+
+
         public async Task<IActionResult> DeleteCommentsByPost(int postId)
         {
-            using (HttpClient client = new HttpClient())
+            string jwtToken = await GetJwtTokenAsync();
+            if (!string.IsNullOrEmpty(jwtToken))
             {
-                client.BaseAddress = new Uri("https://localhost:7030/");
-                string authToken = Request.Cookies["jwt"];
-
-                if (!string.IsNullOrEmpty(authToken))
+                using (HttpClient client = new HttpClient())
                 {
-                    try
+                    client.BaseAddress = new Uri("https://localhost:7030/");
+                    ConfigureHttpClient(client, jwtToken);
+                    HttpResponseMessage response = await client.DeleteAsync($"api/comments/DeleteCommentsByPostID/{postId}");
+                    if (response.IsSuccessStatusCode)
                     {
-                        JObject authTokenObject = JObject.Parse(authToken);
-                        string jwtToken = authTokenObject["token"]?.ToString();
-
-                        if (!string.IsNullOrEmpty(jwtToken))
-                        {
-                            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-
-                            HttpResponseMessage response = await client.DeleteAsync($"api/comments/DeleteCommentsByPostID/{postId}");
-
-                            if (response.IsSuccessStatusCode)
-                            {
-                                // Deletion was successful
-                                return RedirectToAction("DeletePost", "Main", new {postId = postId});   
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("JWT token value not found in the cookie.");
-                        }
-                    }
-                    catch (JsonReaderException)
-                    {
-                        Console.WriteLine("Invalid JSON format in the cookie.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("No JWT token cookie found.");
-                }
-            }
-
-            return RedirectToAction("MainPage");
-        }
-        public async Task<IActionResult> DeletePost(int postId, int topicId)
-        {
-
-            using (HttpClient client = new HttpClient())
-            {
-                await DeleteCommentsByPost(postId);
-                client.BaseAddress = new Uri("https://localhost:7030/");
-                string authToken = Request.Cookies["jwt"];
-                if (!string.IsNullOrEmpty(authToken))
-                {
-                    JObject authTokenObject = JObject.Parse(authToken);
-                    string jwtToken = authTokenObject["token"]?.ToString();
-                    if (!string.IsNullOrEmpty(jwtToken))
-                    {
-                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                        var tokenHandler = new JwtSecurityTokenHandler();
-                        var token = tokenHandler.ReadJwtToken(jwtToken);
-                        var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
-                        HttpResponseMessage response = await client.DeleteAsync($"api/posts/DELETE/{postId}");
-                        if (response.IsSuccessStatusCode)
-                        {
-                            return RedirectToAction("PostByTopic", "Main", new { topicId = topicId });
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                        }
+                        return RedirectToAction("DeletePost", "Main", new { postId = postId });
                     }
                     else
                     {
-                        Console.WriteLine("JWT token value not found in the cookie.");
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                     }
                 }
-                else
+            }
+            return RedirectToAction("MainPage");
+        }
+
+        public async Task<IActionResult> DeletePost(int postId, int topicId)
+        {
+            await DeleteCommentsByPost(postId);
+            string jwtToken = await GetJwtTokenAsync();
+            if (!string.IsNullOrEmpty(jwtToken))
+            {
+                using (HttpClient client = new HttpClient())
                 {
-                    Console.WriteLine("No JWT token cookie found.");
+                    client.BaseAddress = new Uri("https://localhost:7030/");
+                    ConfigureHttpClient(client, jwtToken);
+                    HttpResponseMessage response = await client.DeleteAsync($"api/posts/DELETE/{postId}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return RedirectToAction("PostByTopic", "Main", new { topicId = topicId });
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                    }
                 }
+            }
+            else
+            {
+                Console.WriteLine("No JWT token cookie found.");
             }
             return View(null);
         }
@@ -402,207 +365,146 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
         //COMMENTS
 
+
+
+
+
         [HttpPost]
         public async Task<IActionResult> CreateComment(Comments comment)
         {
-            using (HttpClient client = new HttpClient())
+            string jwtToken = await GetJwtTokenAsync();
+            if (!string.IsNullOrEmpty(jwtToken))
             {
-                client.BaseAddress = new Uri("https://localhost:7030/");
-                string authToken = Request.Cookies["jwt"];
-
-                if (!string.IsNullOrEmpty(authToken))
+                using (HttpClient client = new HttpClient())
                 {
-                    try
+                    client.BaseAddress = new Uri("https://localhost:7030/");
+                    ConfigureHttpClient(client, jwtToken);
+                    string userId = GetUserIdFromJwtToken(jwtToken);
+                    if (userId != null)
                     {
-                        JObject authTokenObject = JObject.Parse(authToken);
-                        string jwtToken = authTokenObject["token"]?.ToString();
-
-                        if (!string.IsNullOrEmpty(jwtToken))
+                        comment.UserID = int.Parse(userId);
+                        string json = JsonConvert.SerializeObject(comment);
+                        StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
+                        HttpResponseMessage response = await client.PostAsync("api/comments/Create", content);
+                        var createdComment = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Comments>(response);
+                        if (createdComment != null)
                         {
-
-                            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-
-                            var tokenHandler = new JwtSecurityTokenHandler();
-                            var token = tokenHandler.ReadJwtToken(jwtToken);
-
-
-                            var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
-                            if (userIdClaim != null)
+                            HttpResponseMessage getCommentResponse = await client.GetAsync($"api/comments/{createdComment.ID}");
+                            var retrievedComment = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Comments>(getCommentResponse);
+                            if (retrievedComment != null)
                             {
-                                string userId = userIdClaim.Value;
-                                comment.UserID = int.Parse(userId);
-                                string json = JsonConvert.SerializeObject(comment);
-                                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-                                HttpResponseMessage response = await client.PostAsync("api/comments/Create", content);
-
-                                if (response.IsSuccessStatusCode)
-                                {
-
-                                    string responseBody = await response.Content.ReadAsStringAsync();
-                                    var createdComment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(responseBody);
-                                    int commentId = createdComment.ID;
-
-                                    HttpResponseMessage getCommentResponse = await client.GetAsync($"api/comments/{commentId}");
-
-                                    if (getCommentResponse.IsSuccessStatusCode)
-                                    {
-                                        string getCommentResponseBody = await getCommentResponse.Content.ReadAsStringAsync();
-                                        var retrievedComment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(getCommentResponseBody);
-
-                                        return RedirectToAction("GetComments", "Main", new { postId = retrievedComment.PostID });
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine("JWT token value not found in the cookie.");
-                                }
-                            }
-                        }
-                    }
-                    catch (JsonReaderException)
-                    {
-                        Console.WriteLine("Invalid JSON format in the cookie.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("No JWT token cookie found.");
-                }
-
-            }
-            return View(null);
-        }
-        [HttpGet]
-        public async Task<IActionResult> GetComments(int postId)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                client.BaseAddress = new Uri("https://localhost:7030/");
-                string authToken = Request.Cookies["jwt"];
-                if (!string.IsNullOrEmpty(authToken))
-                {
-                    JObject authTokenObject = JObject.Parse(authToken);
-                    string jwtToken = authTokenObject["token"]?.ToString();
-                    if (!string.IsNullOrEmpty(jwtToken))
-                    {
-                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                        var tokenHandler = new JwtSecurityTokenHandler();
-                        var token = tokenHandler.ReadJwtToken(jwtToken);
-                        var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
-
-                        if (userIdClaim != null) 
-                        {
-                            string userId = userIdClaim.Value;
-                            ViewBag.UserID = int.Parse(userId);
-                            HttpResponseMessage response = await client.GetAsync($"api/comments/PostID/{postId}");
-
-                            if (response.IsSuccessStatusCode)
-                            {
-                                string responseBody = await response.Content.ReadAsStringAsync();
-                                var comments = JsonConvert.DeserializeObject<List<PROJECT_Reddit_wanna_be_.Models.Comments>>(responseBody);
-                                ViewBag.PostId = postId;
-                                return View("GetComments", comments);
+                                return RedirectToAction("GetComments", "Main", new { postId = retrievedComment.PostID });
                             }
                             else
                             {
-                                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                            }
-                        }
-                            
-                    }
-                        
-                }
-                    
-            }
-            return View(new List<PROJECT_Reddit_wanna_be_.Models.Comments>());
-        }
- 
-        public async Task<IActionResult> DeleteComment(int commentId, int postId)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                client.BaseAddress = new Uri("https://localhost:7030/");
-                string authToken = Request.Cookies["jwt"];
-
-                if (!string.IsNullOrEmpty(authToken))
-                {
-                    try
-                    {
-                        JObject authTokenObject = JObject.Parse(authToken);
-                        string jwtToken = authTokenObject["token"]?.ToString();
-                        
-                        if (!string.IsNullOrEmpty(jwtToken))
-                        {
-                            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                           
-
-                            HttpResponseMessage response = await client.DeleteAsync($"api/comments/DELETE/{commentId}");
-
-                            if (response.IsSuccessStatusCode)
-                            {
-                                // Deletion was successful
-                                return RedirectToAction("GetComments", "Main", new { postId = postId });
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                                Console.WriteLine($"Failed to retrieve the created comment.");
                             }
                         }
                         else
                         {
-                            Console.WriteLine("JWT token value not found in the cookie.");
+                            Console.WriteLine("Failed to create the comment.");
                         }
                     }
-                    catch (JsonReaderException)
-                    {
-                        Console.WriteLine("Invalid JSON format in the cookie.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("No JWT token cookie found.");
                 }
             }
-
-            return RedirectToAction("GetComments", "Main", new { postId = postId });
+            else
+            {
+                Console.WriteLine("No JWT token cookie found.");
+            }
+            return View(null);
         }
+
         [HttpGet]
-        public async Task<IActionResult> EditComment(int commentId)
+        public async Task<IActionResult> GetComments(int postId)
         {
-            
+            ViewBag.PostId = postId;
+            string jwtToken = await GetJwtTokenAsync();
+            if (!string.IsNullOrEmpty(jwtToken))
+            {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    HttpResponseMessage response = await client.GetAsync($"api/comments/{commentId}");
+                    ConfigureHttpClient(client, jwtToken);
+                    string userId = GetUserIdFromJwtToken(jwtToken);
+                    if (userId != null)
+                    {
+                        ViewBag.UserID = int.Parse(userId);
+                        HttpResponseMessage response = await client.GetAsync($"api/comments/PostID/{postId}");
+                        var comments = await GetApiResponseAsync<List<PROJECT_Reddit_wanna_be_.Models.Comments>>(response);
+                        if (comments != null)
+                        {
+                            return View("GetComments", comments);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("No JWT token cookie found.");
+            }
+
+            return View(new List<PROJECT_Reddit_wanna_be_.Models.Comments>());
+        }
+
+
+        public async Task<IActionResult> DeleteComment(int commentId, int postId)
+        {
+            string jwtToken = await GetJwtTokenAsync();
+            if (!string.IsNullOrEmpty(jwtToken))
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7030/");
+                    ConfigureHttpClient(client, jwtToken);
+                    HttpResponseMessage response = await client.DeleteAsync($"api/comments/DELETE/{commentId}");
                     if (response.IsSuccessStatusCode)
                     {
-                        var responseBody = await response.Content.ReadAsStringAsync();
-                        
-                        var comment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(responseBody);
-
-                        return View(comment);
+                        return RedirectToAction("GetComments", "Main", new { postId = postId });
                     }
                     else
                     {
-                        // Handle error
-                        return View("Error");
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                     }
                 }
-            
+            }
+            else
+            {
+                Console.WriteLine("No JWT token cookie found.");
+            }
+            return RedirectToAction("GetComments", "Main", new { postId = postId });
         }
 
-     
+        [HttpGet]
+        public async Task<IActionResult> EditComment(int commentId)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://localhost:7030/");
+                HttpResponseMessage response = await client.GetAsync($"api/comments/{commentId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    var comment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(responseBody);
+                    return View(comment);
+                }
+                else
+                {
+                    return View("Error");
+                }
+            }
+        }
+
         public async Task<IActionResult> EditComment(int commentId, string Content)
         {
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://localhost:7030/");
                 string authToken = Request.Cookies["jwt"];
-                if(!string.IsNullOrEmpty(authToken))
+                if (!string.IsNullOrEmpty(authToken))
                 {
                     JObject authTokenObject = JObject.Parse(authToken);
                     string jwtToken = authTokenObject["token"]?.ToString();
@@ -612,7 +514,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
                         HttpResponseMessage response = await client.GetAsync($"api/comments/{commentId}");
                         if (response.IsSuccessStatusCode)
-                        { 
+                        {
                             var responseBody = await response.Content.ReadAsStringAsync();
                             var comment = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.Comments>(responseBody);
                             Comments updatedComment = new Comments
@@ -632,14 +534,13 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                             return View("Error");
                         }
                     }
-                        
                 }
-                
             }
             return View(null);
         }
 
-        
+
     }
+
 }
 

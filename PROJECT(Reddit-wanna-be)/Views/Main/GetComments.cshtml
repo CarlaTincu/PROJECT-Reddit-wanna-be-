@@ -6,7 +6,10 @@
 <h1>COMMENTS</h1>
 
 <form asp-controller="Main" asp-action="CreateComment">
-    <input type="number" name="comment.PostID" hidden value="@Model.FirstOrDefault()?.PostID"/>
+    @if (Model.Any())
+    {
+        <input type="number" name="comment.PostID" hidden value="@Model.FirstOrDefault()?.PostID" />
+    }
     <input type="text" name="comment.Content" placeholder="Content" required />
     <button type="submit" class="btn btn-primary">POST</button>
 </form>
