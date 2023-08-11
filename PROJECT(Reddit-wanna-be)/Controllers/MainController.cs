@@ -326,12 +326,12 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                         {
                             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
-                            HttpResponseMessage response = await client.DeleteAsync($"api/comments/DeleteByPost/{postId}");
+                            HttpResponseMessage response = await client.DeleteAsync($"api/comments/DeleteCommentsByPostID/{postId}");
 
                             if (response.IsSuccessStatusCode)
                             {
                                 // Deletion was successful
-                                return RedirectToAction("MainPage");
+                                return RedirectToAction("DeletePost", "Main", new {postId = postId});   
                             }
                             else
                             {
@@ -356,9 +356,51 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
             return RedirectToAction("MainPage");
         }
+        public async Task<IActionResult> DeletePost(int postId, int topicId)
+        {
+
+            using (HttpClient client = new HttpClient())
+            {
+                await DeleteCommentsByPost(postId);
+                client.BaseAddress = new Uri("https://localhost:7030/");
+                string authToken = Request.Cookies["jwt"];
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    JObject authTokenObject = JObject.Parse(authToken);
+                    string jwtToken = authTokenObject["token"]?.ToString();
+                    if (!string.IsNullOrEmpty(jwtToken))
+                    {
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                        var tokenHandler = new JwtSecurityTokenHandler();
+                        var token = tokenHandler.ReadJwtToken(jwtToken);
+                        var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
+                        HttpResponseMessage response = await client.DeleteAsync($"api/posts/DELETE/{postId}");
+                        if (response.IsSuccessStatusCode)
+                        {
+                            return RedirectToAction("PostByTopic", "Main", new { topicId = topicId });
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("JWT token value not found in the cookie.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No JWT token cookie found.");
+                }
+            }
+            return View(null);
+        }
+
+
+
 
         //COMMENTS
-
 
         [HttpPost]
         public async Task<IActionResult> CreateComment(Comments comment)

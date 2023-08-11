@@ -68,7 +68,7 @@ namespace WorkingWithAPIApplication.Repository
 
         public async Task DeletePost(int id)
         {
-            var query = "DELETE FROM Posts WHERE Id = @ID";
+            var query = "DELETE FROM Posts WHERE ID = @ID";
             using (var connection = _context.CreateConnection())
             {
                 await connection.ExecuteAsync(query, new { id });

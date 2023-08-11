@@ -71,6 +71,12 @@ else
             <td>
                 @if (ViewBag.UserID == post.UserID)
                 {
+                    <a href="@Url.Action("DeletePost", "Main", new { postId = post.Id, topicId = post.TopicID })">Delete</a>
+                }
+            </td>
+            <td>
+                @if (ViewBag.UserID == post.UserID)
+                {
                     <a href="@Url.Action("EditPost", "Main", new { postId = post.Id, topicId = post.TopicID })">Edit</a>
                 }
             </td>

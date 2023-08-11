@@ -58,5 +58,15 @@ namespace WorkingWithAPIApplication.Controllers
                 return NotFound();
             return Ok(comment);
         }
+
+        [HttpDelete("DeleteCommentsByPostID/{postId}")]
+        public async Task<IActionResult> DeleteCommentsByPostID(int postId)
+        {
+            var User = await commentRepository.GetComments(postId);
+            if (User == null)
+                return NotFound();
+            await commentRepository.DeleteCommentsByPostID(postId);
+            return NoContent();
+        }
     }
 }

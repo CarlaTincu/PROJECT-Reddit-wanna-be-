@@ -61,7 +61,8 @@ namespace WorkingWithAPIApplication.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("DELETE/{id}")]
+        [Authorize]
         public async Task<IActionResult> DeletePost(int id)
         {
             var User = await postRepository.GetPost(id);
@@ -72,7 +73,7 @@ namespace WorkingWithAPIApplication.Controllers
         }
 
 
-        [HttpGet("PostsByTopic/{TopicID}")] // Use the correct parameter name
+        [HttpGet("PostsByTopic/{TopicID}")] 
         public async Task<IActionResult> GetPostsByTopicId(int TopicID)
         {
             var posts = await postRepository.GetPostsByTopicId(TopicID);
