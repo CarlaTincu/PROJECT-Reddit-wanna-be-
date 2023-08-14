@@ -1,4 +1,4 @@
-﻿namespace PROJECT_Reddit_wanna_be_.Project.Data.Entities
+﻿namespace PROJECT_Reddit_wanna_be_.Models
 {
     public class User
     {

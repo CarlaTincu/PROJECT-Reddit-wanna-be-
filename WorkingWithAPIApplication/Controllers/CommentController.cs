@@ -18,7 +18,6 @@ namespace WorkingWithAPIApplication.Controllers
             this.commentRepository = commentRepository;
         }
         [HttpPost("Create")]
-        [Authorize]
         public async Task<IActionResult> CreateComment([FromBody] CommentForCreation CommentID)
         {
             var createComment = await commentRepository.CreateComment(CommentID);

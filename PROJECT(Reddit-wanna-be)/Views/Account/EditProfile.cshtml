@@ -1,0 +1,14 @@
+﻿@model User
+@{
+    Layout = null;
+}
+
+<h2>Edit Profile</h2>
+<form method="post" asp-action="EditProfile">
+    <input type="hidden" name="ID" value="@Model.ID" />
+    <textarea name="Username" rows="1" cols="50" required>@Model.Username</textarea>
+    <textarea name="Email" rows="1" cols="50" required>@Model.Email</textarea>
+    <textarea name="Password" rows="1" cols="50" required>@Model.Password</textarea>
+    <br />
+    <button type="submit">Save Changes</button>
+</form>

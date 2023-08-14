@@ -151,12 +151,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         }
 
 
-        [HttpPost]
-        public async Task<IActionResult> Topics()
-        {
-            return View();
-        }
-
+      
 
         //POSTS
 
@@ -166,7 +161,6 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         {
             ViewBag.TopicID = topicId;
             string jwtToken = await GetJwtTokenAsync();
-
             if (!string.IsNullOrEmpty(jwtToken))
             {
                 ConfigureHttpClient(jwtToken);
@@ -180,7 +174,6 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                     ViewBag.UserID = int.Parse(userId);
                     HttpResponseMessage response = await _client.GetAsync($"api/posts/PostsByTopic/{topicId}");
                     var posts = await GetApiResponseAsync<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(response);
-
                     if (posts != null)
                     {
                         return View("PostByTopic", posts);

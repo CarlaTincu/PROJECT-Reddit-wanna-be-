@@ -39,7 +39,7 @@ namespace WorkingWithAPIApplication.Controllers
             return Ok(new { Id = createdUser });
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("UPDATE/{id}")]
         public async Task<IActionResult> UpdateUser(int id,[FromBody]UserForUpdate UserU)
         {
             var User = await userRepository.GetUser(id);
