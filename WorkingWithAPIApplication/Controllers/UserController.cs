@@ -49,7 +49,7 @@ namespace WorkingWithAPIApplication.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("DELETE/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             var User = await userRepository.GetUser(id);
@@ -62,6 +62,15 @@ namespace WorkingWithAPIApplication.Controllers
         public async Task<IActionResult> GetUserForLogin(string Username, string Password)
         {
             var user = await userRepository.GetUserForLogin(Username,Password);
+            if (user == null)
+                return NotFound();
+            return Ok(user);
+        }
+
+        [HttpGet("/username/{Username}")]
+        public async Task<IActionResult> GetUserName(string Username)
+        {
+            var user = await userRepository.GetUserName(Username);
             if (user == null)
                 return NotFound();
             return Ok(user);
@@ -80,14 +89,6 @@ namespace WorkingWithAPIApplication.Controllers
                 };
             }
             return null;
-        }
-        [HttpGet("Admins")]
-        [Authorize]
-        public IActionResult AdminsEndpoint()
-        {
-            var currentUser = GetCurrentUser();
-            return Ok($"Hi {currentUser.Username}!");
-
         }
     }
 }

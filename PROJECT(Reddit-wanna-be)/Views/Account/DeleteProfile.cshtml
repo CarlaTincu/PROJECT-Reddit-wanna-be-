@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Delete Profile";
+}
+
+<h2>Delete Profile</h2>
+
+@if (ViewBag.DeletionSuccessful)
+{
+    <p>User deleted successfully.</p>
+}
+else
+{
+    <p>An error occurred while deleting the post.</p>
+}
+
+<a asp-action="Index" asp-controller="Home"></a>

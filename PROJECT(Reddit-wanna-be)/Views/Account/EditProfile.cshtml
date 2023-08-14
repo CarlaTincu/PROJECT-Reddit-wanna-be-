@@ -12,3 +12,8 @@
     <br />
     <button type="submit">Save Changes</button>
 </form>
+
+<form method="post" asp-action="DeleteProfile">
+    <input type="hidden" name="ID" value="@Model.ID" />
+    <button type="submit" class="delete-button">Delete Profile</button>
+</form>

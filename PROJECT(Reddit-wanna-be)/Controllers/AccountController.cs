@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using WorkingWithAPIApplication.Entities;
+using System.Net;
 
 namespace PROJECT_Reddit_wanna_be_.Controllers
 {
@@ -162,18 +163,28 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://localhost:7030/");
-                HttpResponseMessage response = await client.PostAsync("api/users/create", new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json"));
+                HttpResponseMessage response = await client.GetAsync($"username/{model.UserName}");
+                if(response.StatusCode != HttpStatusCode.NotFound)
+                {
+                    ModelState.AddModelError("UserName", "An account with this username already exists.");
+                    return View();
+                }
+                else 
+                {
+                    response = await client.PostAsync("api/users/create", new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json"));
 
-                if (response.IsSuccessStatusCode)
-                {
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.User>(responseBody);
-                    return RedirectToAction("Login");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        var user = JsonConvert.DeserializeObject<PROJECT_Reddit_wanna_be_.Models.User>(responseBody);
+                        return RedirectToAction("Login");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                    }
                 }
-                else
-                {
-                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                }
+               
             }
             return View(null);
         }
@@ -234,6 +245,41 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             }
 
             return View("Error");
+        }
+
+        public async Task<IActionResult> DeleteProfile()
+        {
+            var userCookie = HttpContext.Request.Cookies["jwt"];
+            var cookieValue = Uri.UnescapeDataString(userCookie);
+            var userIdClaim = GetUserIdFromJwtToken(cookieValue);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return View("Error");
+            }
+            string jwtToken = await GetJwtTokenAsync();
+            if (!string.IsNullOrEmpty(jwtToken))
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri("https://localhost:7030/");
+                    ConfigureHttpClient(client, jwtToken);
+                    HttpResponseMessage response = await client.DeleteAsync($"api/users/DELETE/{userIdClaim}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Response.Cookies.Delete("jwt");
+                        return RedirectToAction("Index", "Home");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("No JWT token cookie found.");
+            }
+            return View(null);
         }
 
     }

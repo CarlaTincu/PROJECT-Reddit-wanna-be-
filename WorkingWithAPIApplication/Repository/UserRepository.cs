@@ -98,5 +98,14 @@ namespace WorkingWithAPIApplication.Repository
             }
         }
 
+        public async Task<User> GetUserName(string Username)
+        {
+            var query = "SELECT * FROM Users WHERE Username = @Username";
+            using (var connection = _context.CreateConnection())
+            {
+                var user = connection.QuerySingleOrDefault<User>(query, new { Username });
+                return user;
+            }
+        }
     }
 }

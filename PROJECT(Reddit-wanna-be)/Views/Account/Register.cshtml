@@ -1,10 +1,31 @@
 ﻿@model RegisterModel
 
 <h2>Register</h2>
+<style>
+    .form-group {
+        margin-bottom: 20px; 
+    }
+</style>
 <form asp-controller="Account" asp-action="Register">
-    
-    <input type="username" name="UserName" placeholder="Username" required />
-    <input type="password" name="Password" placeholder="Password" required />
-    <input type="email" name="Email" placeholder="Email" required />
+
+    <div class="form-group">
+        <label for="UserName">Username</label>
+        <input type="username" id="UserName" name="UserName" placeholder="Username" required />
+        @if (ViewData.ModelState.ContainsKey("UserName"))
+        {
+            <div class="text-danger">@ViewData.ModelState["UserName"].Errors[0].ErrorMessage</div>
+        }
+    </div>
+
+    <div class="form-group">
+        <label for="Password">Password</label>
+        <input type="password" id="Password" name="Password" placeholder="Password" required />
+    </div>
+
+    <div class="form-group">
+        <label for="Email">Email</label>
+        <input type="email" id="Email" name="Email" placeholder="Email" required />
+    </div>
+
     <button type="submit" class="btn btn-primary">Register</button>
 </form>
