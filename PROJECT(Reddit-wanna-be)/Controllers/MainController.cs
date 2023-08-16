@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PROJECT_Reddit_wanna_be_.Models;
 using PROJECT_Reddit_wanna_be_.Project.Data.Entities;
+using RestSharp;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -22,74 +23,16 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
     public class MainController : Controller
     {
 
-        private HttpClient _client;
-        public MainController()
-        {
-            _client = new HttpClient();
-            _client.BaseAddress = new Uri("https://localhost:7030/");
-        }
-        private void ConfigureHttpClient(HttpClient client, string jwtToken)
-        {
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-        }
+        private readonly HttpClient _client;
+        private readonly MethodController method;
 
-        private async Task<string> GetJwtTokenAsync()
+        public MainController(HttpClient client, MethodController method)
         {
-            string authToken = Request.Cookies["jwt"];
-
-            if (!string.IsNullOrEmpty(authToken))
-            {
-                try
-                {
-                    JObject authTokenObject = JObject.Parse(authToken);
-                    return authTokenObject["token"]?.ToString();
-                }
-                catch (JsonReaderException)
-                {
-                    Console.WriteLine("Invalid JSON format in the cookie.");
-                }
-            }
-
-            return null;
+            _client = client;
+            this.method = method;
         }
-
-        private string GetUserIdFromJwtToken(string jwtToken)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.ReadJwtToken(jwtToken);
-            var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
-
-            if (userIdClaim != null)
-            {
-                return userIdClaim.Value;
-            }
-            return null;
-        }
-        private void ConfigureHttpClient(string jwtToken)
-        {
-            if (!string.IsNullOrEmpty(jwtToken))
-            {
-                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-            }
-        }
-        private async Task<T> GetApiResponseAsync<T>(HttpResponseMessage response)
-        {
-            if (response.IsSuccessStatusCode)
-            {
-                string responseBody = await response.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<T>(responseBody);
-            }
-            else
-            {
-                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                return default(T);
-            }
-        }
-
 
         //TOPICS
-
-
 
         public async Task<IActionResult> MainPage()
         {
@@ -121,14 +64,14 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         {
             try
             {
-                string jwtToken = await GetJwtTokenAsync();
+                string jwtToken = await method.GetJwtTokenAsync(HttpContext);
                 if (!string.IsNullOrEmpty(jwtToken))
                 {
-                    ConfigureHttpClient(_client, jwtToken);
+                    method.ConfigureHttpClient(_client, jwtToken);
                     string json = JsonConvert.SerializeObject(topic);
                     StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
                     HttpResponseMessage response = await _client.PostAsync("api/topics/Create", content);
-                    var createdTopic = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(response);
+                    var createdTopic = await method.GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Project.Data.Entities.Topics>(response);
                     if (createdTopic != null)
                     {
                         return RedirectToAction("MainPage");
@@ -150,20 +93,16 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
             return View(null);
         }
 
-
-      
-
         //POSTS
-
 
         [HttpGet]
         public async Task<IActionResult> PostByTopic(int topicId)
         {
             ViewBag.TopicID = topicId;
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
             if (!string.IsNullOrEmpty(jwtToken))
             {
-                ConfigureHttpClient(jwtToken);
+                method.ConfigureHttpClient(jwtToken);
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var token = tokenHandler.ReadJwtToken(jwtToken);
                 var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
@@ -172,8 +111,9 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
                 {
                     string userId = userIdClaim.Value;
                     ViewBag.UserID = int.Parse(userId);
+                    _client.BaseAddress = new Uri("https://localhost:7030/");
                     HttpResponseMessage response = await _client.GetAsync($"api/posts/PostsByTopic/{topicId}");
-                    var posts = await GetApiResponseAsync<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(response);
+                    var posts = await method.GetApiResponseAsync<List<PROJECT_Reddit_wanna_be_.Models.Posts>>(response);
                     if (posts != null)
                     {
                         return View("PostByTopic", posts);
@@ -192,24 +132,24 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePost(Posts post, int topicId)
         {
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
             if (!string.IsNullOrEmpty(jwtToken))
             {
-                ConfigureHttpClient(jwtToken);
-                string userId = GetUserIdFromJwtToken(jwtToken);
+                method.ConfigureHttpClient(jwtToken);
+                string userId = method.GetUserIdFromJwtToken(jwtToken);
                 if (userId != null)
                 {
                     post.UserID = int.Parse(userId);
                     string json = JsonConvert.SerializeObject(post);
                     StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
                     HttpResponseMessage response = await _client.PostAsync("api/posts/Create", content);
-                    var createdPost = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(response);
+                    var createdPost = await method.GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(response);
                     if (createdPost != null)
                     {
                         HttpResponseMessage getPostResponse = await _client.GetAsync($"api/posts/{createdPost.Id}");
                         if (getPostResponse.IsSuccessStatusCode)
                         {
-                            var retrievedPost = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(getPostResponse);
+                            var retrievedPost = await method.GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(getPostResponse);
                             return RedirectToAction("PostByTopic", "Main", new { topicId = topicId });
                         }
                         else
@@ -235,11 +175,11 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         [HttpGet]
         public async Task<IActionResult> EditPost(int postId)
         {
-            ConfigureHttpClient(_client, await GetJwtTokenAsync());
+            method.ConfigureHttpClient(_client, await method.GetJwtTokenAsync(HttpContext));
             HttpResponseMessage response = await _client.GetAsync($"api/posts/{postId}");
             if (response.IsSuccessStatusCode)
             {
-                var post = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(response);
+                var post = await method.GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Posts>(response);
                 return View(post);
             }
             else
@@ -290,13 +230,13 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
         public async Task<IActionResult> DeleteCommentsByPost(int postId)
         {
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
             if (!string.IsNullOrEmpty(jwtToken))
             {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    ConfigureHttpClient(client, jwtToken);
+                    method.ConfigureHttpClient(client, jwtToken);
                     HttpResponseMessage response = await client.DeleteAsync($"api/comments/DeleteCommentsByPostID/{postId}");
                     if (response.IsSuccessStatusCode)
                     {
@@ -314,13 +254,13 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         public async Task<IActionResult> DeletePost(int postId, int topicId)
         {
             await DeleteCommentsByPost(postId);
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
             if (!string.IsNullOrEmpty(jwtToken))
             {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    ConfigureHttpClient(client, jwtToken);
+                    method.ConfigureHttpClient(client, jwtToken);
                     HttpResponseMessage response = await client.DeleteAsync($"api/posts/DELETE/{postId}");
                     if (response.IsSuccessStatusCode)
                     {
@@ -351,25 +291,25 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateComment(Comments comment)
         {
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
             if (!string.IsNullOrEmpty(jwtToken))
             {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    ConfigureHttpClient(client, jwtToken);
-                    string userId = GetUserIdFromJwtToken(jwtToken);
+                    method.ConfigureHttpClient(client, jwtToken);
+                    string userId = method.GetUserIdFromJwtToken(jwtToken);
                     if (userId != null)
                     {
                         comment.UserID = int.Parse(userId);
                         string json = JsonConvert.SerializeObject(comment);
                         StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
                         HttpResponseMessage response = await client.PostAsync("api/comments/Create", content);
-                        var createdComment = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Comments>(response);
+                        var createdComment = await method.GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Comments>(response);
                         if (createdComment != null)
                         {
                             HttpResponseMessage getCommentResponse = await client.GetAsync($"api/comments/{createdComment.ID}");
-                            var retrievedComment = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Comments>(getCommentResponse);
+                            var retrievedComment = await method.GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.Comments>(getCommentResponse);
                             if (retrievedComment != null)
                             {
                                 return RedirectToAction("GetComments", "Main", new { postId = retrievedComment.PostID });
@@ -397,19 +337,19 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         public async Task<IActionResult> GetComments(int postId)
         {
             ViewBag.PostId = postId;
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
             if (!string.IsNullOrEmpty(jwtToken))
             {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    ConfigureHttpClient(client, jwtToken);
-                    string userId = GetUserIdFromJwtToken(jwtToken);
+                    method.ConfigureHttpClient(client, jwtToken);
+                    string userId = method.GetUserIdFromJwtToken(jwtToken);
                     if (userId != null)
                     {
                         ViewBag.UserID = int.Parse(userId);
                         HttpResponseMessage response = await client.GetAsync($"api/comments/PostID/{postId}");
-                        var comments = await GetApiResponseAsync<List<PROJECT_Reddit_wanna_be_.Models.Comments>>(response);
+                        var comments = await method.GetApiResponseAsync<List<PROJECT_Reddit_wanna_be_.Models.Comments>>(response);
                         if (comments != null)
                         {
                             return View("GetComments", comments);
@@ -432,13 +372,13 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
         public async Task<IActionResult> DeleteComment(int commentId, int postId)
         {
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
             if (!string.IsNullOrEmpty(jwtToken))
             {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    ConfigureHttpClient(client, jwtToken);
+                    method.ConfigureHttpClient(client, jwtToken);
                     HttpResponseMessage response = await client.DeleteAsync($"api/comments/DELETE/{commentId}");
                     if (response.IsSuccessStatusCode)
                     {

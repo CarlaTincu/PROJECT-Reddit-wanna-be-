@@ -5,6 +5,37 @@
     Layout = "_LayoutPosts";
 }
 
+<style>
+    .post-container {
+   
+    }
+
+    .post-wrapper {
+        border: 1px solid #ccc;
+        width: 220px;
+        height: 220px;
+        margin-bottom: 10px;
+        
+    }
+
+    .post {
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .post-header {
+        font-weight: bold;
+    }
+
+    .post-content {
+        margin-top: 10px;
+    }
+
+    .post-footer {
+        margin-top: 10px;
+    }
+</style>
+
 <h1>Posts for Selected Topic</h1>
 
 <form asp-controller="Main" asp-action="CreatePost" asp-route-topicId="@ViewBag.TopicId">
@@ -12,81 +43,32 @@
     <button type="submit" class="btn btn-primary">Post</button>
 </form>
 
-@*@if (User.Identity.IsAuthenticated)
-{
-    <form asp-controller="Main" asp-action="CreatePost" asp-route-topicId="@ViewBag.TopicId">
-        <input type="Content" name="Content" placeholder="Content" required />
-        <button type="submit" class="btn btn-primary">Post</button>
-    </form>
-}
-else
-{
-    <p>You have to log in to create posts.</p>
-}*@
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 800px;
-            margin: auto;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-
-        tr:hover {
-            background-color: #e0e0e0;
-        }
-
-        .content {
-            max-width: 400px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-    </style>
-</head>
-<table>
-    <tr>
-      
-    </tr>
+<div class="post-container">
     @foreach (var post in Model ?? Enumerable.Empty<PROJECT_Reddit_wanna_be_.Models.Posts>())
     {
-
-        <tr>
-            <td>
+        <div class="post-wrapper">
+            <div class="post">
+                <div class="post-header">
+                    <span>@post.Username</span>
+                   
+                </div>
+                <div class="post-content">
+                    @post.Content
+                </div>
+                <div class="post-footer">
+                    <a class="show-comments" href="@Url.Action("GetComments", "Main", new { postId = post.Id })">Comments</a>
+                    
+                </div>
+            </div>
+            <div class="post-actions">
                 @if (ViewBag.UserID == post.UserID)
                 {
                     <a href="@Url.Action("DeletePost", "Main", new { postId = post.Id, topicId = post.TopicID })">Delete</a>
-                }
-            </td>
-            <td>
-                @if (ViewBag.UserID == post.UserID)
-                {
                     <a href="@Url.Action("EditPost", "Main", new { postId = post.Id, topicId = post.TopicID })">Edit</a>
                 }
-            </td>
-            <td>@post.Username</td>
-            <td>@post.Content</td>
-            <td>@post.PostedDate</td>
-            <td>
-                <a class="show-comments" href="@Url.Action("GetComments", "Main", new { postId = post.Id })">Comments</a>
-            </td>
-            
-        </tr>
+            </div>
+            <div>
+                <span>@post.PostedDate</span> </div>
+        </div>
     }
-</table>
+</div>

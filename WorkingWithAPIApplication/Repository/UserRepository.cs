@@ -47,7 +47,6 @@ namespace WorkingWithAPIApplication.Repository
             }
         }
 
-        [HttpPost]
         public async Task<int> CreateUser(UserForCreation user)
         {
             var query = "INSERT INTO Users(UserId,Username,Email,Password) VALUES (@UserId,@Username,@Email,@Password)";

@@ -19,95 +19,19 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
     public class AccountController : Controller
     {
 
-        private HttpClient _client;
-        public AccountController()
+        private readonly HttpClient _client;
+        private readonly MethodController method;
+        public AccountController(HttpClient client, MethodController method)
         {
-            _client = new HttpClient();
-            _client.BaseAddress = new Uri("https://localhost:7030/");
+            _client = client;
+            this.method = method;
         }
-        private void ConfigureHttpClient(HttpClient client, string jwtToken)
-        {
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-        }
-
-        private async Task<string> GetJwtTokenAsync()
-        {
-            string authToken = Request.Cookies["jwt"];
-
-            if (!string.IsNullOrEmpty(authToken))
-            {
-                try
-                {
-                    JObject authTokenObject = JObject.Parse(authToken);
-                    return authTokenObject["token"]?.ToString();
-                }
-                catch (JsonReaderException)
-                {
-                    Console.WriteLine("Invalid JSON format in the cookie.");
-                }
-            }
-
-            return null;
-        }
-
-        private string GetUserIdFromJwtToken(string jwtToken)
-        {
-            JObject authTokenObject = JObject.Parse(jwtToken);
-            string Token = authTokenObject["token"]?.ToString();
-            var tokenHandler = new JwtSecurityTokenHandler();
-            try
-            {
-                var token = tokenHandler.ReadJwtToken(Token);
-                var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
-
-                if (userIdClaim != null)
-                {
-                    return userIdClaim.Value;
-                }
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-           
-            return null;
-        }
-        private void ConfigureHttpClient(string jwtToken)
-        {
-            if (!string.IsNullOrEmpty(jwtToken))
-            {
-                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-            }
-        }
-        private async Task<T> GetApiResponseAsync<T>(HttpResponseMessage response)
-        {
-            if (response.IsSuccessStatusCode)
-            {
-                string responseBody = await response.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<T>(responseBody);
-            }
-            else
-            {
-                Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                return default(T);
-            }
-        }
-
+       
         public IActionResult Login()
         {
             return View();
         }
-        private Guid GetCurrentUserToken()
-        {
-            var claim = HttpContext.User.Claims;
-            var userTokenClaim = claim.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            if (userTokenClaim != null && Guid.TryParse(userTokenClaim.Value, out Guid userToken))
-            {
-                return userToken;
-            }
-            return Guid.Empty;
-        }
-
+       
         [HttpPost]
         public async Task<IActionResult> Login(string UserName, string Password)
 
@@ -193,17 +117,17 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         {
             var userCookie = HttpContext.Request.Cookies["jwt"];
             var cookieValue = Uri.UnescapeDataString(userCookie);
-            var userIdClaim = GetUserIdFromJwtToken(cookieValue);
+            var userIdClaim = method.GetUserIdFromJwtToken(cookieValue);
 
             if (string.IsNullOrEmpty(userIdClaim))
             {
                 return View("Error");
             }
-            ConfigureHttpClient(_client, await GetJwtTokenAsync());
+            method.ConfigureHttpClient(_client, await method.GetJwtTokenAsync(HttpContext));
             HttpResponseMessage response = await _client.GetAsync($"api/users/{userIdClaim}");
             if (response.IsSuccessStatusCode)
             {
-                var user = await GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.User>(response);
+                var user = await method.GetApiResponseAsync<PROJECT_Reddit_wanna_be_.Models.User>(response);
                 return View(user);
             }
             else
@@ -215,14 +139,14 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         [HttpPost]
         public async Task<IActionResult> EditProfile(int ID, string username,string password, string email)
         {
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
 
             if (!string.IsNullOrEmpty(jwtToken))
             {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    ConfigureHttpClient(client, jwtToken);
+                    method.ConfigureHttpClient(client, jwtToken);
                     HttpResponseMessage response = await client.GetAsync($"api/users/{ID}");
                     if (response.IsSuccessStatusCode)
                     {
@@ -251,18 +175,18 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
         {
             var userCookie = HttpContext.Request.Cookies["jwt"];
             var cookieValue = Uri.UnescapeDataString(userCookie);
-            var userIdClaim = GetUserIdFromJwtToken(cookieValue);
+            var userIdClaim = method.GetUserIdFromJwtToken(cookieValue);
             if (string.IsNullOrEmpty(userIdClaim))
             {
                 return View("Error");
             }
-            string jwtToken = await GetJwtTokenAsync();
+            string jwtToken = await method.GetJwtTokenAsync(HttpContext);
             if (!string.IsNullOrEmpty(jwtToken))
             {
                 using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new Uri("https://localhost:7030/");
-                    ConfigureHttpClient(client, jwtToken);
+                    method.ConfigureHttpClient(client, jwtToken);
                     HttpResponseMessage response = await client.DeleteAsync($"api/users/DELETE/{userIdClaim}");
                     if (response.IsSuccessStatusCode)
                     {
