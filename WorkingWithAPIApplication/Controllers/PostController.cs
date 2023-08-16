@@ -36,11 +36,11 @@ namespace WorkingWithAPIApplication.Controllers
         }
         [HttpPost("Create")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> CreatePost([FromBody] PostForCreation PostID)
+        public async Task<IActionResult> CreatePost([FromBody] PostForCreation post)
         {
             try
             {
-                var createPost = await postRepository.CreatePost(PostID);
+                var createPost = await postRepository.CreatePost(post);
                 return Ok(new { Id = createPost });
             }
             catch(Exception ex)

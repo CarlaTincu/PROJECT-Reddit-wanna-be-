@@ -43,12 +43,10 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
         public string GetUserIdFromJwtToken(string jwtToken)
         {
-            JObject authTokenObject = JObject.Parse(jwtToken);
-            string Token = authTokenObject["token"]?.ToString();
             var tokenHandler = new JwtSecurityTokenHandler();
             try
             {
-                var token = tokenHandler.ReadJwtToken(Token);
+                var token = tokenHandler.ReadJwtToken(jwtToken);
                 var userIdClaim = token.Claims.FirstOrDefault(c => c.Type == "UserID");
 
                 if (userIdClaim != null)
@@ -63,6 +61,7 @@ namespace PROJECT_Reddit_wanna_be_.Controllers
 
             return null;
         }
+
         public void ConfigureHttpClient(string jwtToken)
         {
             if (!string.IsNullOrEmpty(jwtToken))

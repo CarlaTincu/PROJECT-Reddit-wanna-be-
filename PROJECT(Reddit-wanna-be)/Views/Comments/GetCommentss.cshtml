@@ -5,7 +5,7 @@
 }
 <h1>COMMENTS</h1>
 
-<form asp-controller="Main" asp-action="CreateComment">
+<form asp-controller="Comments" asp-action="CreateComment">
     @if (Model.Any())
     {
         <input type="number" name="comment.PostID" hidden value="@Model.FirstOrDefault()?.PostID" />
@@ -14,7 +14,6 @@
     <button type="submit" class="btn btn-primary">POST</button>
 </form>
 
-@*<a href = "@Url.Action("PostByTopic", "Main", new {postId =  Model.FirstOrDefault() })" class="btn btn-primary" >BACK</a>*@
 <!DOCTYPE html>
 <html>
 <head>
@@ -75,18 +74,18 @@
                 <td>
                     @if (ViewBag.UserID == comment.UserID)
                     {
-                        <a  href="@Url.Action("DeleteComment", "Main", new { commentId = comment.ID, postId = comment.PostID })">Delete</a>
+                        <a href="@Url.Action("DeleteComment", "Comments", new { commentId = comment.ID, postId = comment.PostID })">Delete</a>
                     }
                 </td>
                 <td>
                     @if (ViewBag.UserID == comment.UserID)
                     {
-                        <a href="@Url.Action("EditComment", "Main", new { commentId = comment.ID, postId = comment.PostID })">Edit</a>
+                        <a href="@Url.Action("EditComment", "Comments", new { commentId = comment.ID, postId = comment.PostID })">Edit</a>
                     }
                 </td>
 
-                    
-         
+
+
             </tr>
         }
     </tbody>

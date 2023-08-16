@@ -7,7 +7,7 @@
 
 <h1>Posts for Selected Topic</h1>
 
-<form asp-controller="Main" asp-action="CreatePost" asp-route-topicId="@ViewBag.TopicId">
+<form asp-controller="Posts" asp-action="CreatePosts" asp-route-topicId="@ViewBag.TopicId">
     <input type="Content" name="Content" placeholder="Content" required />
     <input type="UserID" name="UserID" placeholder="UserID" required />
     <input type="TopicID" name="TopicID" placeholder="TopicID" required />
@@ -59,7 +59,7 @@
             <td>@post.Content</td>
             <td>@post.PostedDate</td>
             <td>
-                <a class="show-comments" href="@Url.Action("GetComments", "Main", new { postId = post.Id })">Comments</a>
+                <a class="show-comments" href="@Url.Action("GetComments", "Comments", new { postId = post.Id })">Comments</a>
             </td>
         </tr>
     }

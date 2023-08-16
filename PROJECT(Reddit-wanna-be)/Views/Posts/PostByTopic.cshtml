@@ -7,7 +7,6 @@
 
 <style>
     .post-container {
-   
     }
 
     .post-wrapper {
@@ -15,7 +14,6 @@
         width: 220px;
         height: 220px;
         margin-bottom: 10px;
-        
     }
 
     .post {
@@ -38,7 +36,7 @@
 
 <h1>Posts for Selected Topic</h1>
 
-<form asp-controller="Main" asp-action="CreatePost" asp-route-topicId="@ViewBag.TopicId">
+<form asp-controller="Posts" asp-action="CreatePost" asp-route-topicId="@ViewBag.TopicId">
     <input type="Content" name="Content" placeholder="Content" required />
     <button type="submit" class="btn btn-primary">Post</button>
 </form>
@@ -50,25 +48,26 @@
             <div class="post">
                 <div class="post-header">
                     <span>@post.Username</span>
-                   
+
                 </div>
                 <div class="post-content">
                     @post.Content
                 </div>
                 <div class="post-footer">
-                    <a class="show-comments" href="@Url.Action("GetComments", "Main", new { postId = post.Id })">Comments</a>
-                    
+                    <a class="show-comments" href="@Url.Action("GetCommentss", "Comments", new { postId = post.Id })">Comments</a>
+
                 </div>
             </div>
             <div class="post-actions">
                 @if (ViewBag.UserID == post.UserID)
                 {
-                    <a href="@Url.Action("DeletePost", "Main", new { postId = post.Id, topicId = post.TopicID })">Delete</a>
-                    <a href="@Url.Action("EditPost", "Main", new { postId = post.Id, topicId = post.TopicID })">Edit</a>
+                    <a href="@Url.Action("DeletePost", "Posts", new { postId = post.Id, topicId = post.TopicID })">Delete</a>
+                    <a href="@Url.Action("EditPost", "Posts", new { postId = post.Id, topicId = post.TopicID })">Edit</a>
                 }
             </div>
             <div>
-                <span>@post.PostedDate</span> </div>
+                <span>@post.PostedDate</span>
+            </div>
         </div>
     }
 </div>

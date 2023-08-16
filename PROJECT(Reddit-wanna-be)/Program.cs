@@ -1,5 +1,8 @@
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using PROJECT_Reddit_wanna_be_.Controllers;
+using WorkingWithAPIApplication.Context;
+using WorkingWithAPIApplication.Contracts;
+using WorkingWithAPIApplication.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,15 +11,23 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<DapperContext>();
 builder.Services.AddScoped<MethodController>();
 builder.Services.AddLogging(builder => builder.AddConsole());
+builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddAuthentication("Bearer")
+.AddJwtBearer("Bearer", options =>
+    {
+        options.Authority = "https://localhost:44367/";
+        options.Audience = "https://localhost:44367/";
+    });
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
